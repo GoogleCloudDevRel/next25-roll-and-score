@@ -1,0 +1,2 @@
+project_id: next-25-skeeball  # Replace with your Google Cloud project ID
+subscription_id: skeeball-agent-subscription # Replace with your Pub/Sub subscription ID

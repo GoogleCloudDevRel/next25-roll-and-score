@@ -1,0 +1,15 @@
+[Unit]
+Description=Skeeball Agent Service
+After=network.target
+
+[Service]
+User=jasondavenport  # Your user
+WorkingDirectory=/Users/jasondavenport/Github/skeeball-agent/ # Your project directory
+# Activate the uv virtual environment. Change this if necessary depending on how you activate the env
+ExecStartPre=/bin/bash -c 'source /Users/jasondavenport/Github/skeeball-agent/uv activate && cd /Users/jasondavenport/Github/skeeball-agent'  #<-- Activate virtual env *before* running the script
+ExecStart=/usr/bin/python3 main.py # Path to your main script INSIDE the project dir
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
