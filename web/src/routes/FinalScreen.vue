@@ -12,18 +12,21 @@
       ref="drawer"
       text="Great job! Now approach the staff to collect to your comprehensive analysis!"
     />
+    <VConfetti ref="confetti" />
   </div>
 </template>
 
 <script setup>
 import GeminiCoachDrawer from '@/components/GeminiCoachDrawer.vue'
 import ScoreBoard from '@/components/ScoreBoard.vue'
+import VConfetti from '@/components/VConfetti.vue'
 import { ref } from 'vue'
 import { useScoreStore } from '@/store'
 import { storeToRefs } from 'pinia'
 
 const drawer = ref(null)
 const scoreBoard = ref(null)
+const confetti = ref(null)
 const scoreStore = useScoreStore()
 const { score } = storeToRefs(scoreStore)
 
@@ -31,11 +34,13 @@ defineExpose({
   animateSet: async () => {
     await drawer.value.animateSet()
     await scoreBoard.value.animateSet()
+    confetti.value.animateSet()
   },
   animateIn: async () => {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     scoreBoard.value.animateIn()
     await drawer.value.animateIn()
+    confetti.value.animateIn()
   },
   animateOut: async () => {
     await drawer.value.animateOut()
