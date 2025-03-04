@@ -38,3 +38,6 @@ npm run lint
   - `http://localhost:3000/!#/tv`: Tv 55"
   - `http://localhost:3000/!#/chromebook`: Chromebook
   - `http://localhost:3000/!#/phone`: Phone
+
+## queryParams
+  - `?manual` to control of the navigation by clicking to go next
