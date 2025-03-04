@@ -170,7 +170,7 @@ onMounted(() => {
             mesh.renderOrder += length + 10
           }
 
-          mesh.scale.x = Cubic.easeOut(Math.min(mesh.__mapper(mesh.position.z), 1.0))
+          mesh.scale.x = Cubic.easeOut(Math.min(mesh.__mapper(mesh.position.z), 1.0)) * 0.5
           mesh.scale.y = mesh.scale.x
           mesh.position.x = STAR_POSITIONS[i].x * (maxSide / 2)
           mesh.position.y = STAR_POSITIONS[i].y * (maxSide / 2)
