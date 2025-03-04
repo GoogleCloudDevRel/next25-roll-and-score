@@ -31,6 +31,11 @@ window.addEventListener('hashchange', () => {
   currentPath.value = window.location.hash
 })
 
+const isIos = /iPad|iPhone/.test(navigator.userAgent)
+if (isIos) {
+  document.documentElement.classList.add('ios')
+}
+
 const currentRoute = computed(() => {
   return routes[currentPath.value.slice(1) || '/'] || NotFoundView
 })

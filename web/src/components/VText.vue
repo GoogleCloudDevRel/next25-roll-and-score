@@ -228,14 +228,16 @@ defineExpose({
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .VText {
   position: relative;
   &.center {
     text-align: center;
     margin: 0 auto;
   }
-  text-wrap: balance;
+  :global(html:not(.ios)) & {
+    text-wrap: balance;
+  }
 }
 
 .line {
