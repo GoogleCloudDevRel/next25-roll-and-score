@@ -21,7 +21,7 @@ import BackgroundRings from '@/components/background/BackgroundRings.vue'
 import RollAndScoreHighlights from '@/components/RollAndScoreHighlights.vue'
 import RollAndScoreIntro from '@/components/RollAndScoreIntro.vue'
 import { useRouteManager } from '@/router/useRouteManager'
-import { nextTick, onMounted, shallowRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, shallowRef } from 'vue'
 
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
@@ -34,11 +34,20 @@ const routes = {
 const {
   registerRoutes,
   navigateTo,
+  isTransitioning,
   // Optional: Use this to customize how routes change behave
   // onRouteChange,
 } = useRouteManager()
 
 window.navigateTo = navigateTo
+
+let index = 0
+const navigationExample = ['intro', 'highlights']
+function handleClick(e) {
+  e.preventDefault()
+  if (isTransitioning.value) return
+  navigateTo(navigationExample[++index])
+}
 
 // Register routes with their animations
 onMounted(async () => {
@@ -47,6 +56,12 @@ onMounted(async () => {
   await nextTick()
 
   navigateTo('intro')
+
+  document.body.addEventListener('click', handleClick)
+})
+
+onUnmounted(() => {
+  document.body.removeEventListener('click', handleClick)
 })
 </script>
 

@@ -17,6 +17,7 @@ import { useScoreStore } from '@/store'
 
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { getQueryParam } from '@/utils/get-query-param'
 
 const scoreBoard = ref(null)
 
@@ -33,11 +34,22 @@ defineExpose({
   animateIn: async () => {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     await scoreBoard.value.animateIn()
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    navigateTo('videoReplay')
   },
   animateOut: () => {
     scoreBoard.value.animateOut()
+  },
+  animateIdle: async () => {
+    if (getQueryParam('demo')) {
+      const isAfterCoachReport = score.value > 0
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      store.setScore(isAfterCoachReport ? 3000 : 1234)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      store.setScore(isAfterCoachReport ? 4000 : 2000)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      store.setScore(isAfterCoachReport ? 5000 : 2456)
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      navigateTo(isAfterCoachReport ? 'final' : 'replay')
+    }
   },
 })
 </script>

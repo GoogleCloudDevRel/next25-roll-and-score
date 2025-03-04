@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 
 export const useScoreStore = defineStore('score', {
   state: () => ({
-    score: 1234
+    score: 0
   }),
   actions: {
     setScore(score) {

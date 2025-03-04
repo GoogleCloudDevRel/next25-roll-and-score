@@ -27,11 +27,13 @@ defineExpose({
   animateIn: async () => {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     await geminiCoach.value.animateIn()
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    navigateTo('score')
   },
   animateOut: () => {
     geminiCoach.value.animateOut()
+  },
+  animateIdle: async () => {
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    navigateTo('score')
   },
 })
 </script>

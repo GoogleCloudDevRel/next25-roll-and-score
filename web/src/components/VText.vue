@@ -240,26 +240,26 @@ defineExpose({
   }
 }
 
-.line {
+:global(.line) {
   overflow: hidden;
   margin-bottom: -0.065em;
   padding-bottom: 0.065em;
 }
 
-.skeeball .line {
+:global(.skeeball .line) {
   padding-right: 0.1em;
   margin-right: -0.1em;
   margin-bottom: -0.13em;
   padding-bottom: 0.13em;
 }
 
-.word {
+:global(.word) {
   position: relative;
   display: inline-block;
   margin-left: -0.0025em;
 }
 
-.char {
+:global(.char) {
   position: relative;
   display: inline-block;
 }

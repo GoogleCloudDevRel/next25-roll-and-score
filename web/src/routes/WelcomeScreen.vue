@@ -2,7 +2,7 @@
   <div class="center">
     <GeminiCoach
       ref="geminiCoach"
-      text="Welcome! Are you ready to experience Gemini 2.0’s real-time guidance, and see how AI can elevate your game?"
+      :text="text"
       :immediate="false"
     />
   </div>
@@ -12,6 +12,13 @@
 import GeminiCoach from '@/components/GeminiCoach.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { ref } from 'vue'
+
+const props = defineProps({
+  text: {
+    type: String,
+    default: 'Welcome! Are you ready to experience Gemini 2.0’s real-time guidance, and see how AI can elevate your game?',
+  },
+})
 
 const geminiCoach = ref(null)
 
@@ -24,11 +31,13 @@ defineExpose({
   animateIn: async () => {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     await geminiCoach.value.animateIn()
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    navigateTo('start')
   },
   animateOut: () => {
     geminiCoach.value.animateOut()
+  },
+  animateIdle: async () => {
+    await new Promise((resolve) => setTimeout(resolve, props.text.length * 50))
+    navigateTo('start')
   },
 })
 </script>

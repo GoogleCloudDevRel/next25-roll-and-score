@@ -83,14 +83,14 @@ defineExpose({
     })
   },
   animateOut: async () => {
-    pre.value.animateOut(),
-      text.value.animateOut(0, { yPercent: -130 }),
-      sub.value.animateOut(),
-      await gsap.to(svg.value, {
-        scale: 0,
-        duration: 1.5,
-        ease: 'power2.in',
-      })
+    pre.value.animateOut()
+    text.value.animateOut(0, { yPercent: -130 })
+    sub.value.animateOut()
+    await gsap.to(svg.value, {
+      scale: 0,
+      duration: 1.5,
+      ease: 'power2.in',
+    })
   },
 })
 </script>

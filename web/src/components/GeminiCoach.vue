@@ -129,10 +129,10 @@ defineExpose({
       scale: 0,
     })
   },
-  animateIn: () => {
+  animateIn: async () => {
     textContent.value.animateIn(0.35)
     badge.value?.animateIn()
-    gsap.to(bg.value, {
+    await gsap.to(bg.value, {
       scale: 1,
       duration: 1,
       ease: 'power2.inOut',

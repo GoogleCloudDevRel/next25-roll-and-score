@@ -127,19 +127,20 @@ async function goTo(n, prev = 0, force = false) {
 }
 
 const animateSet = () => {
-  goTo(0, 0, true)
   gsap.set(backgrounds.value, {
     scale: 0,
   })
+  goTo(0, 0, true)
 }
 
-const animateIn = async () => {
+const animateIn = async (delay) => {
   gsap.to(backgrounds.value, {
     scale: 1,
     duration: 1,
     ease: 'power2.inOut',
+    delay,
   })
-  gsap.delayedCall(0.3, () => {
+  gsap.delayedCall(delay + 0.3, () => {
     goTo(props.value, prevValue.value)
     prevValue.value = props.value
   })
@@ -181,7 +182,7 @@ defineExpose({
 <style lang="scss" scoped>
 .scoreboard {
   display: flex;
-  gap: 0.1em;
+  gap: max(0.1em, 6px);
 }
 
 .scroller {
@@ -225,18 +226,9 @@ defineExpose({
 }
 
 .noBackground {
-  .scroller {
-    background: transparent;
+  --height: 1em;
+  .clip {
     padding: 0;
-    box-shadow: none;
-    height: 1em;
-    border-radius: 0;
-    .inner {
-      height: 1em;
-      & > * {
-        height: 1em;
-      }
-    }
   }
 }
 

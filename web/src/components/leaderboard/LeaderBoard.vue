@@ -14,7 +14,7 @@
           <Scoreboard
             textVariant="tv-bold-110"
             :singleDigit="true"
-            :value="0"
+            :value="1"
             scrollerVariant="yellow"
             :immediate="false"
             :ref="setRankNumber"
@@ -30,7 +30,7 @@
               :immediate="false"
               :noBackground="true"
             />
-            <LeaderboardBacking />
+            <LeaderboardBacking ref="backing" />
           </div>
         </div>
       </div>
@@ -39,7 +39,7 @@
           <Scoreboard
             textVariant="tv-bold-110"
             :singleDigit="true"
-            :value="0"
+            :value="2"
             :ref="setRankNumber"
             :immediate="false"
           />
@@ -59,7 +59,7 @@
           <Scoreboard
             textVariant="tv-bold-110"
             :singleDigit="true"
-            :value="0"
+            :value="3"
             :ref="setRankNumber"
             :immediate="false"
           />
@@ -79,7 +79,7 @@
           <Scoreboard
             textVariant="tv-bold-110"
             :singleDigit="true"
-            :value="0"
+            :value="4"
             :ref="setRankNumber"
             :immediate="false"
           />
@@ -99,7 +99,7 @@
           <Scoreboard
             textVariant="tv-bold-110"
             :singleDigit="true"
-            :value="0"
+            :value="5"
             :ref="setRankNumber"
             :immediate="false"
           />
@@ -123,10 +123,11 @@ import { ref } from 'vue'
 import VText from '@/components/VText.vue'
 import Scoreboard from '@/components/ScoreBoard.vue'
 import LeaderboardBacking from '@/components/leaderboard/LeaderboardBacking.vue'
+import { gsap } from '@/utils/gsap'
 const rankNumbers = ref([])
 const scoreNumbers = ref([])
 
-const props = defineProps({
+defineProps({
   score1: {
     type: Number,
     default: 0,
@@ -161,9 +162,10 @@ const setScoreNumber = (el) => {
 }
 
 const heading = ref(null)
-
+const backing = ref(null)
 function animateSet() {
   heading.value.prepare()
+  backing.value.animateSet()
   rankNumbers.value.forEach((number) => {
     number.animateSet()
   })
@@ -173,34 +175,25 @@ function animateSet() {
 }
 
 const animateIn = async () => {
+  backing.value.animateIn(0.15)
   setTimeout(() => {
     heading.value.animateIn()
   }, 100)
   rankNumbers.value.forEach((number, index) => {
-    setTimeout(
-      () => {
-        number.goTo(index + 1)
-      },
-      (index + 1) * 150,
-    )
+    number.animateIn(index * 0.15)
   })
   scoreNumbers.value.forEach((number, index) => {
-    setTimeout(
-      () => {
-        number.animateIn()
-      },
-      (index + 1) * 150,
-    )
+    number.animateIn((index + 1) * 0.15)
   })
 }
 
 const animateOut = () => {
   heading.value.animateOut()
-  scoreNumbers.value.forEach((number, index) => {
-    number.goTo(0, props[`score${index + 1}`])
+  scoreNumbers.value.forEach((number) => {
+    number.animateOut()
   })
-  rankNumbers.value.forEach((number, index) => {
-    number.goTo(0, index + 1)
+  rankNumbers.value.forEach((number) => {
+    number.animateOut()
   })
 }
 
@@ -213,7 +206,7 @@ defineExpose({
 
 <style lang="scss" scoped>
 .leaderboard {
-  padding: px-to-vw(100, 4k);
+  padding: 0 px-to-vw(100, 4k);
   .heading {
     text-align: center;
     margin-bottom: px-to-vw(100, 4k);

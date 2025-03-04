@@ -54,7 +54,7 @@ const animateIn = async () => {
     new Promise((resolve) => (video.value.onended = () => resolve())),
     new Promise((resolve) => setTimeout(resolve, 5000)),
   ]).then(() => {
-    navigateTo('geminiReport')
+    navigateTo('report')
   })
 }
 
