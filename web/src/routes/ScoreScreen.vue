@@ -41,13 +41,14 @@ defineExpose({
   animateIdle: async () => {
     if (getQueryParam('demo')) {
       const isAfterCoachReport = score.value > 0
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 3000))
       store.setScore(isAfterCoachReport ? 3000 : 1234)
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 3000))
       store.setScore(isAfterCoachReport ? 4000 : 2000)
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 3000))
       store.setScore(isAfterCoachReport ? 5000 : 2456)
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+      if (getQueryParam('manual')) return
       navigateTo(isAfterCoachReport ? 'final' : 'replay')
     }
   },

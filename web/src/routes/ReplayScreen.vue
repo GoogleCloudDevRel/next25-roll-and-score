@@ -19,6 +19,7 @@
 import { gsap } from '@/utils/gsap'
 import { ref } from 'vue'
 import { useRouteManager } from '@/router/useRouteManager'
+import { getQueryParam } from '@/utils/get-query-param'
 
 const video = ref(null)
 const wrapper = ref(null)
@@ -69,6 +70,7 @@ defineExpose({
   animateIn,
   animateOut,
   animateIdle: async () => {
+    if (getQueryParam('manual')) return
     await Promise.race([
       new Promise((resolve) => (video.value.onended = () => resolve())),
       new Promise((resolve) => setTimeout(resolve, 5000)),

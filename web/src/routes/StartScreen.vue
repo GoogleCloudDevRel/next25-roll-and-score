@@ -14,6 +14,7 @@
 import GeminiCoach from '@/components/GeminiCoach.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import colors from '@/utils/colors'
+import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
 
 const geminiCoach = ref(null)
@@ -32,6 +33,7 @@ defineExpose({
     geminiCoach.value.animateOut()
   },
   animateIdle: async () => {
+    if (getQueryParam('manual')) return
     await new Promise((resolve) => setTimeout(resolve, 2000))
     navigateTo('score')
   },

@@ -11,12 +11,14 @@
 <script setup>
 import GeminiCoach from '@/components/GeminiCoach.vue'
 import { useRouteManager } from '@/router/useRouteManager'
+import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
 
 const props = defineProps({
   text: {
     type: String,
-    default: 'Welcome! Are you ready to experience Gemini 2.0’s real-time guidance, and see how AI can elevate your game?',
+    default:
+      'Welcome! Are you ready to experience Gemini 2.0’s real-time guidance, and see how AI can elevate your game?',
   },
 })
 
@@ -36,6 +38,7 @@ defineExpose({
     geminiCoach.value.animateOut()
   },
   animateIdle: async () => {
+    if (getQueryParam('manual')) return
     await new Promise((resolve) => setTimeout(resolve, props.text.length * 50))
     navigateTo('start')
   },

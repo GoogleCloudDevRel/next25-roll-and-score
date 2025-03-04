@@ -11,6 +11,7 @@
 <script setup>
 import GeminiCoach from '@/components/GeminiCoach.vue'
 import { useRouteManager } from '@/router/useRouteManager'
+import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
 import { useGeminiReportStore } from '@/store'
 import { storeToRefs } from 'pinia'
@@ -34,6 +35,7 @@ defineExpose({
     geminiCoach.value.animateOut()
   },
   animateIdle: async () => {
+    if (getQueryParam('manual')) return
     await new Promise((resolve) => setTimeout(resolve, geminiReport.value.length * 50))
     navigateTo('score')
   },
