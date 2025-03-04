@@ -30,6 +30,7 @@
 </template>
 
 <script setup>
+import { gsap } from '@/utils/gsap'
 import IconBase from './IconBase.vue'
 import VText from './VText.vue'
 
@@ -92,6 +93,30 @@ const handleHover = (isHovering) => {
   // Add any additional hover handling logic here
   props.onHover(isHovering)
 }
+
+defineExpose({
+  animateSet: () => {
+    gsap.set(el.value, {
+      clipPath: 'inset(50% round 50px)',
+    })
+  },
+  animateIn: (delay = 0) => {
+    gsap.to(el.value, {
+      clipPath: 'inset(-5% round 50px)',
+      duration: 1,
+      ease: 'power2.inOut',
+      delay,
+    })
+  },
+  animateOut: (delay = 0) => {
+    gsap.to(el.value, {
+      clipPath: 'inset(50% round 50px)',
+      duration: 1,
+      ease: 'power2.inOut',
+      delay,
+    })
+  },
+})
 </script>
 
 <style lang="scss" scoped>
@@ -109,13 +134,13 @@ const handleHover = (isHovering) => {
   cursor: pointer;
 
   &.default {
-    height: 54px;
+    height: min(px-to-vh(54), 54px);
     padding: 0 24px;
   }
 
   &.icon {
-    height: 54px;
-    width: 54px;
+    height: min(px-to-vh(54), 54px);
+    width: min(px-to-vh(54), 54px);
     padding: 0;
   }
 

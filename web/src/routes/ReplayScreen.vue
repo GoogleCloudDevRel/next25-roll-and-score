@@ -49,13 +49,6 @@ const animateIn = async () => {
     duration: 1,
     ease: 'power2.inOut',
   })
-
-  Promise.race([
-    new Promise((resolve) => (video.value.onended = () => resolve())),
-    new Promise((resolve) => setTimeout(resolve, 5000)),
-  ]).then(() => {
-    navigateTo('report')
-  })
 }
 
 const animateOut = () => {
@@ -75,6 +68,13 @@ defineExpose({
   animateSet,
   animateIn,
   animateOut,
+  animateIdle: async () => {
+    await Promise.race([
+      new Promise((resolve) => (video.value.onended = () => resolve())),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ])
+    navigateTo('report')
+  },
 })
 </script>
 

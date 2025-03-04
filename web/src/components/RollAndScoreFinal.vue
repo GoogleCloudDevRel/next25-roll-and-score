@@ -12,6 +12,7 @@
     <div class="header">
       <IconGoogle class="logo" />
       <VButton
+        ref="btn"
         text="How it Works"
         textVariant="bold-24"
       />
@@ -33,6 +34,7 @@
           ref="scoreBoard"
           :useColors="false"
           textVariant="bold-80"
+          :score="score"
         />
         <div></div>
         <div></div>
@@ -80,25 +82,30 @@ import VText from './VText.vue'
 import { gsap } from '@/utils/gsap'
 import BackgroundBase from './background/BackgroundBase.vue'
 import BackgroundRings from './background/BackgroundRings.vue'
+import { useScoreStore } from '@/store'
+import { storeToRefs } from 'pinia'
+
+const store = useScoreStore()
+const { score } = storeToRefs(store)
 
 const dashboard = ref()
 const scoreBoard = ref()
 const scoreText = ref()
 const statsText = ref()
+const btn = ref()
 const blocks = ref([])
 
 onMounted(() => {
   blocks.value = Array.from(dashboard.value.querySelectorAll('.block'))
-  animateSet()
 })
 
-function animateSet() {
+async function animateSet() {
   gsap.set(blocks.value, {
     clipPath: 'inset(50% round 25px)',
   })
-
-  scoreText.value.prepare()
-  statsText.value.prepare()
+  btn.value.animateSet()
+  await scoreText.value.prepare()
+  await statsText.value.prepare()
   scoreBoard.value.goTo(0, 0, true)
 }
 
@@ -111,7 +118,7 @@ async function animateIn() {
     onStart: () => {
       scoreText.value.animateIn(0.2)
       statsText.value.animateIn(0.3)
-      scoreBoard.value.goTo(1234)
+      btn.value.animateIn(0.4)
     },
   })
 }
