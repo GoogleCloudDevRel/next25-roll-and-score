@@ -149,7 +149,7 @@ onMounted(() => {
         const p = Math.min(v * 2, 2 * (1 - v))
 
         meshes.forEach((mesh, i, { length }) => {
-          progress = (time * 0.3 + i / 2 + speed.value) % 2
+          progress = (time * 0.15 + i / 2 + speed.value) % 2
           if (progress < 0.1 && mesh.__pristine) {
             mesh.renderOrder += length - i
             mesh.__pristine = false
@@ -174,7 +174,7 @@ onMounted(() => {
           mesh.scale.y = mesh.scale.x
           mesh.position.x = STAR_POSITIONS[i].x * (maxSide / 2)
           mesh.position.y = STAR_POSITIONS[i].y * (maxSide / 2)
-          mesh.position.z += 0.05 + 0.5 * p
+          mesh.position.z += 0.025 + 0.5 * p
         })
       }
 

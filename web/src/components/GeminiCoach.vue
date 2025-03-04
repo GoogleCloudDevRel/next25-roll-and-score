@@ -209,5 +209,10 @@ svg {
   z-index: 1;
   bottom: 100%;
   transform: translateY(50%);
+
+  :deep(svg) {
+    width: px-to-vw(62, 4k);
+    height: px-to-vw(62, 4k);
+  }
 }
 </style>

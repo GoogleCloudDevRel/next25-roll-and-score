@@ -22,6 +22,7 @@ import RollAndScoreHighlights from '@/components/RollAndScoreHighlights.vue'
 import RollAndScoreIntro from '@/components/RollAndScoreIntro.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { nextTick, onMounted, onUnmounted, shallowRef } from 'vue'
+import { getQueryParam } from '@/utils/get-query-param'
 
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
@@ -42,11 +43,10 @@ const {
 window.navigateTo = navigateTo
 
 let index = 0
-const navigationExample = ['intro', 'highlights']
 function handleClick(e) {
   e.preventDefault()
   if (isTransitioning.value) return
-  navigateTo(navigationExample[++index])
+  navigateTo(Object.keys(routes)[++index])
 }
 
 // Register routes with their animations
@@ -55,7 +55,11 @@ onMounted(async () => {
 
   await nextTick()
 
-  navigateTo('intro')
+  const initialView = Object.keys(routes).find((key) => getQueryParam('view', false) === key)
+  index = Object.keys(routes).indexOf(initialView)
+  index = index === -1 ? 0 : index
+
+  navigateTo(initialView ?? 'intro')
 
   document.body.addEventListener('click', handleClick)
 })

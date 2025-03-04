@@ -70,5 +70,6 @@ function toPascalCase(str) {
   filter: drop-shadow(px-to-vw(5, '4k') px-to-vw(10, '4k') black);
   stroke: black;
   stroke-width: px-to-vw(3, '4k');
+  paint-order: fill stroke;
 }
 </style>

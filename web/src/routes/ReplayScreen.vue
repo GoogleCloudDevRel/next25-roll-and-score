@@ -1,5 +1,14 @@
 <template>
   <div class="center">
+    <div class="badge-top">
+      <VBadge ref="badge">
+        <IconBase variant="gemini" />
+        <VText
+          text="GEMINI COACH"
+          variant="tv-bold-72"
+        />
+      </VBadge>
+    </div>
     <div
       class="video-replay"
       ref="wrapper"
@@ -20,9 +29,13 @@ import { gsap } from '@/utils/gsap'
 import { ref } from 'vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { getQueryParam } from '@/utils/get-query-param'
+import VBadge from '@/components/VBadge.vue'
+import IconBase from '@/components/IconBase.vue'
+import VText from '@/components/VText.vue'
 
 const video = ref(null)
 const wrapper = ref(null)
+const badge = ref(null)
 
 const { navigateTo } = useRouteManager()
 
@@ -33,12 +46,15 @@ const animateSet = () => {
   gsap.set(video.value, {
     scale: 1.5,
   })
+  badge.value.animateSet()
 }
 
 const animateIn = async () => {
   await new Promise((resolve) => setTimeout(resolve, 2000))
 
   video.value.play()
+
+  badge.value.animateIn()
 
   gsap.to(wrapper.value, {
     scale: 1,
@@ -53,6 +69,8 @@ const animateIn = async () => {
 }
 
 const animateOut = () => {
+  badge.value.animateOut()
+
   gsap.to(wrapper.value, {
     scale: 0,
     duration: 1,
@@ -87,6 +105,17 @@ defineExpose({
   align-items: center;
   height: 100%;
   padding: px-to-vw(48, 4k);
+
+  .badge-top {
+    position: absolute;
+    top: px-to-vw(20, 4k);
+    z-index: 100;
+
+    :deep(svg) {
+      width: px-to-vw(62, 4k);
+      height: px-to-vw(62, 4k);
+    }
+  }
 
   .video-replay {
     width: 100%;

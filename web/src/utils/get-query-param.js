@@ -1,4 +1,8 @@
-export const getQueryParam = (param) => {
+export const getQueryParam = (param, asBoolean = true) => {
   const urlParams = new URLSearchParams(window.location.search)
-  return Boolean(urlParams.get(param) !== null)
+  const value = urlParams.get(param)
+  if (asBoolean) {
+    return Boolean(value !== null)
+  }
+  return value
 }
