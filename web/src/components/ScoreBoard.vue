@@ -13,11 +13,11 @@
       class="scroller"
       v-for="s in singleDigit ? 1 : 4"
       :key="s"
+      ref="scrollers"
     >
       <div
         v-if="!noBackground"
         class="background"
-        :ref="setBackground"
       />
       <div class="clip">
         <div
@@ -42,7 +42,7 @@ import { onMounted, ref, watch } from 'vue'
 
 const prevValue = ref(0)
 const inners = ref([])
-const backgrounds = ref([])
+const scrollers = ref([])
 
 const props = defineProps({
   value: {
@@ -78,12 +78,6 @@ const props = defineProps({
 const setInner = (el) => {
   if (el && !inners.value.includes(el)) {
     inners.value.push(el)
-  }
-}
-
-const setBackground = (el) => {
-  if (el && !backgrounds.value.includes(el)) {
-    backgrounds.value.push(el)
   }
 }
 
@@ -127,35 +121,38 @@ async function goTo(n, prev = 0, force = false) {
 }
 
 const animateSet = () => {
-  gsap.set(backgrounds.value, {
-    scale: 0,
+  gsap.set(scrollers.value, {
+    clipPath: `inset(${scrollers.value[0].clientHeight / 2 + 1}px ${scrollers.value[0].clientWidth / 2 + 1}px round ${(scrollers.value[0].clientHeight / 1.4) * 0.1}px)`,
   })
   goTo(0, 0, true)
 }
 
 const animateIn = async (delay) => {
-  gsap.to(backgrounds.value, {
-    scale: 1,
+  const shadowY = (scrollers.value[0].clientHeight / 1.4) * 0.07
+  const shadowX = (scrollers.value[0].clientHeight / 1.4) * 0.05
+  gsap.to(scrollers.value, {
+    clipPath: `inset(${-shadowY}px ${-shadowX}px round ${(scrollers.value[0].clientHeight / 1.4) * 0.1}px)`,
     duration: 1,
-    ease: 'power2.inOut',
+    ease: 'power2.out',
     delay,
+    stagger: 0.1,
   })
-  gsap.delayedCall(delay + 0.3, () => {
+  gsap.delayedCall(delay, () => {
     goTo(props.value, prevValue.value)
     prevValue.value = props.value
   })
 }
 
 const animateOut = () => {
-  gsap.to(backgrounds.value, {
-    scale: 0,
+  gsap.to(scrollers.value, {
+    clipPath: `inset(${scrollers.value[0].clientHeight / 2 + 1}px ${scrollers.value[0].clientWidth / 2 + 1}px round ${(scrollers.value[0].clientHeight / 1.4) * 0.1}px)`,
     duration: 1,
     ease: 'power2.inOut',
   })
   gsap.to(inners.value, {
-    yPercent: 100,
+    yPercent: -900,
     duration: 1,
-    ease: 'power2.inOut',
+    ease: 'power2.in',
   })
   prevValue.value = 0
 }

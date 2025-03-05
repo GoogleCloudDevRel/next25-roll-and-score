@@ -34,7 +34,7 @@
           ref="scoreBoard"
           :useColors="false"
           textVariant="bold-80"
-          :score="score"
+          :value="props.score"
         />
         <div></div>
         <div></div>
@@ -82,11 +82,6 @@ import VText from './VText.vue'
 import { gsap } from '@/utils/gsap'
 import BackgroundBase from './background/BackgroundBase.vue'
 import BackgroundRings from './background/BackgroundRings.vue'
-import { useScoreStore } from '@/store'
-import { storeToRefs } from 'pinia'
-
-const store = useScoreStore()
-const { score } = storeToRefs(store)
 
 const dashboard = ref()
 const scoreBoard = ref()
@@ -94,6 +89,13 @@ const scoreText = ref()
 const statsText = ref()
 const btn = ref()
 const blocks = ref([])
+
+const props = defineProps({
+  score: {
+    type: Number,
+    default: 0,
+  },
+})
 
 onMounted(() => {
   blocks.value = Array.from(dashboard.value.querySelectorAll('.block'))
@@ -106,19 +108,20 @@ async function animateSet() {
   btn.value.animateSet()
   await scoreText.value.prepare()
   await statsText.value.prepare()
-  scoreBoard.value.goTo(0, 0, true)
+  scoreBoard.value.animateSet()
 }
 
 async function animateIn() {
   gsap.to(blocks.value, {
     clipPath: 'inset(-5% round 25px)',
-    duration: 1,
-    stagger: 0.1,
+    duration: 1.2,
     ease: 'power2.inOut',
+    delay: 0.2,
     onStart: () => {
       scoreText.value.animateIn(0.2)
       statsText.value.animateIn(0.3)
       btn.value.animateIn(0.4)
+      scoreBoard.value.animateIn(0.4)
     },
   })
 }
@@ -132,7 +135,6 @@ async function animateOut() {
     onComplete: () => {
       scoreText.value.animateOut()
       statsText.value.animateOut()
-      scoreBoard.value.goTo(0)
     },
   })
 }
