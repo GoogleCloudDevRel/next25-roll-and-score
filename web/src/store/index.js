@@ -22,11 +22,11 @@ export const useScoreStore = defineStore('score', {
 
 export const useHightlightsStore = defineStore('highlights', {
   state: () => ({
-    score1: 9999,
-    score2: 8888,
-    score3: 7777,
-    score4: 6666,
-    score5: 5555,
+    score1: 5910,
+    score2: 4678,
+    score3: 3456,
+    score4: 2345,
+    score5: 1234,
   }),
   actions: {
     setHighlights(highlights) {

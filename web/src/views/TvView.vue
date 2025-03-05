@@ -73,6 +73,29 @@ onMounted(async () => {
     scoreStore.setScore(2345, 3)
   }
 
+  if (initialView === 'final') {
+    switch (getQueryParam('rank', false)) {
+      case '1':
+        scoreStore.setScore(5910)
+        break
+      case '2':
+        scoreStore.setScore(4678)
+        break
+      case '3':
+        scoreStore.setScore(3456)
+        break
+      case '4':
+        scoreStore.setScore(2345)
+        break
+      case '5':
+        scoreStore.setScore(1234)
+        break
+      default:
+        scoreStore.setScore(1000)
+        break
+    }
+  }
+
   registerRoutes(routes, activeRoutes, activeRoutesRef)
 
   await nextTick()

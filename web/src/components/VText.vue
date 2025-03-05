@@ -2,9 +2,8 @@
   <div
     :class="['VText', variant ? `text-${variant}` : '', { gradient: gradient }, { center: center }]"
     ref="el"
-  >
-    {{ innerText }}
-  </div>
+    v-html="innerText"
+  />
 </template>
 
 <script setup>
@@ -195,12 +194,16 @@ watch(
   () => props.text,
   async () => {
     if (prepared.value) {
+      isPreparing.value = true
+      el.value.style.opacity = 0
       splitText.value.revert()
       innerText.value = props.text
       await nextTick()
       splitText.value.split()
       handleGradient()
-      animateSet(!isAnimated.value, setOpts)
+      isPreparing.value = false
+      await animateSet(!isAnimated.value, setOpts)
+      el.value.style.opacity = 1
     } else {
       innerText.value = props.text
     }

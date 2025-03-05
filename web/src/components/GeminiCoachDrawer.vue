@@ -5,10 +5,16 @@
       ref="bg"
     ></div>
     <div class="badgeTop">
-      <VBadge ref="badge">
-        <IconBase variant="gemini" />
+      <VBadge
+        ref="badge"
+        :variant="badgeVariant"
+      >
+        <IconBase
+          v-if="badgeIcon"
+          variant="gemini"
+        />
         <VText
-          text="GEMINI COACH"
+          :text="badgeText"
           variant="tv-bold-72"
         />
       </VBadge>
@@ -34,6 +40,18 @@ const textContent = shallowRef(null)
 const bg = shallowRef(null)
 
 defineProps({
+  badgeIcon: {
+    type: Boolean,
+    default: true,
+  },
+  badgeVariant: {
+    type: String,
+    default: 'yellow',
+  },
+  badgeText: {
+    type: String,
+    default: 'GEMINI COACH',
+  },
   text: {
     type: String,
     default: 'Great job! Now approach the staff to collect to your comprehensive analysis!',
@@ -68,6 +86,8 @@ defineExpose({
       delay: textContent.value.splitText?.lines.length * 0.1 || 0,
     })
   },
+  text: () => textContent.value,
+  badge: () => badge.value,
 })
 </script>
 

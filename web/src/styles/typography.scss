@@ -305,9 +305,19 @@
     -webkit-text-stroke-color: #000;
   }
 
-  .text-tv-bold-420 {
+  .text-tv-bold-575 {
     font-weight: 700;
     font-size: px-to-vw(575, "4k");
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-shadow: px-to-vw(20, 4k) px-to-vw(27, 4k) 0 #000;
+    -webkit-text-stroke: 8px;
+    -webkit-text-stroke-color: #000;
+  }
+
+  .text-tv-bold-420 {
+    font-weight: 700;
+    font-size: px-to-vw(420, "4k");
     line-height: 1;
     letter-spacing: -0.04em;
     text-shadow: px-to-vw(20, 4k) px-to-vw(27, 4k) 0 #000;
@@ -328,7 +338,7 @@
   .text-tv-bold-160 {
     font-weight: 700;
     font-size: px-to-vw(180, "4k");
-    line-height: 1;
+    line-height: 1.1;
     letter-spacing: -0.03em;
     text-shadow: 0.05em 0.07em 0 #000;
     -webkit-text-stroke: px-to-vw(8, "4k");

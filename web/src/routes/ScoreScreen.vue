@@ -2,7 +2,7 @@
   <div class="center">
     <ScoreBoard
       ref="scoreBoard"
-      text-variant="tv-bold-420"
+      text-variant="tv-bold-575"
       :value="score"
       :immediate="false"
     />
