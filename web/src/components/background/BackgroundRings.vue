@@ -43,6 +43,13 @@ const STAR_POSITIONS = [
   { x: 0.8, y: -0, z: -0 },
 ]
 
+// Star positioning configuration
+const STAR_CONFIG = {
+  minDepth: -25, // Furthest z position
+  maxDepth: -5, // Closest z position
+  exponent: 2, // Higher values push more stars to the back
+}
+
 const bgColor = new Color('#0E0D0D')
 
 let meshes
@@ -116,14 +123,21 @@ onMounted(() => {
 
         const mesh = new Mesh(gl, { geometry, program })
         mesh.setParent(scene)
-        mesh.position.z = STAR_POSITIONS[i].z * 7.5 - 15
+
+        // Calculate z position based on distribution type
+        const normalizedZ = Math.abs(STAR_POSITIONS[i].z)
+        const zPosition =
+          STAR_CONFIG.minDepth +
+          (STAR_CONFIG.maxDepth - STAR_CONFIG.minDepth) *
+            Math.pow(normalizedZ, STAR_CONFIG.exponent)
+
+        mesh.position.z = zPosition
         mesh.renderOrder = length - i + 10
-        mesh.__mapper = gsap.utils.mapRange(
-          STAR_POSITIONS[i].z * 7.5 - 15,
-          STAR_POSITIONS[i].z * 7.5 - 10,
-          0,
-          1,
-        )
+
+        // Update mapper range to match new z positions
+        const visibilityStart = zPosition
+        const visibilityEnd = zPosition + 5 // Adjust this value to control fade-in distance
+        mesh.__mapper = gsap.utils.mapRange(visibilityStart, visibilityEnd, 0, 1)
         return mesh
       })
 
@@ -166,7 +180,14 @@ onMounted(() => {
 
         starMeshes.forEach((mesh, i, { length }) => {
           if (mesh.position.z > camera.position.z) {
-            mesh.position.z = STAR_POSITIONS[i].z * 7.5 - 15
+            // Reset star to the furthest position when it passes the camera
+            const normalizedZ = Math.abs(STAR_POSITIONS[i].z)
+            const zPosition =
+              STAR_CONFIG.minDepth +
+              (STAR_CONFIG.maxDepth - STAR_CONFIG.minDepth) *
+                Math.pow(normalizedZ, STAR_CONFIG.exponent)
+
+            mesh.position.z = zPosition
             mesh.renderOrder += length + 10
           }
 
