@@ -5,11 +5,13 @@
       :text="geminiReport"
       :immediate="false"
     />
+    <VProgress />
   </div>
 </template>
 
 <script setup>
 import GeminiCoach from '@/components/GeminiCoach.vue'
+import VProgress from '@/components/VProgress.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
@@ -48,5 +50,6 @@ defineExpose({
   justify-content: center;
   align-items: center;
   height: 100%;
+  padding-bottom: px-to-vw(260, 4k);
 }
 </style>

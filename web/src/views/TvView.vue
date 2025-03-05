@@ -30,6 +30,7 @@ import ReplayScreen from '../routes/ReplayScreen.vue'
 import ReportScreen from '../routes/ReportScreen.vue'
 import FinalScreen from '../routes/FinalScreen.vue'
 import { getQueryParam } from '@/utils/get-query-param'
+import { useScoreStore } from '@/store'
 
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
@@ -53,23 +54,30 @@ const {
 } = useRouteManager()
 
 let index = 0
+const navigationFlow = ['intro', 'welcome', 'start', 'score', 'replay', 'report', 'score', 'final']
 function handleClick(e) {
   e.preventDefault()
   if (isTransitioning.value) return
-  navigateTo(Object.keys(routes)[++index])
+  navigateTo(navigationFlow[++index])
 }
 
 // Register routes with their animations
 onMounted(async () => {
+  const initialView = navigationFlow.find((key) => getQueryParam('view', false) === key)
+  index = navigationFlow.indexOf(initialView)
+  index = index === -1 ? 0 : index
+
+  const scoreStore = useScoreStore()
+
+  if (['replay', 'report'].includes(initialView)) {
+    scoreStore.setScore(2345, 3)
+  }
+
   registerRoutes(routes, activeRoutes, activeRoutesRef)
 
   await nextTick()
 
-  const initialView = Object.keys(routes).find((key) => getQueryParam('view', false) === key)
-  index = Object.keys(routes).indexOf(initialView)
-  index = index === -1 ? 0 : index
-
-  navigateTo(initialView ?? 'intro')
+  navigateTo(initialView ?? navigationFlow[0])
 
   document.body.addEventListener('click', handleClick)
 })

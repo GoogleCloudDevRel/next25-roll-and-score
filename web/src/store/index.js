@@ -2,12 +2,21 @@ import { defineStore } from "pinia";
 
 export const useScoreStore = defineStore('score', {
   state: () => ({
-    score: 0
+    score: 0,
+    progress: 0,
+    maxTries: 5,
   }),
   actions: {
-    setScore(score) {
-      this.score = score
-    }
+    setScore(score, progress = null) {
+      if (this.progress < this.maxTries) {
+        this.score = score
+        if (typeof progress === 'number') {
+          this.progress = progress
+        } else {
+          this.progress++
+        }
+      }
+    },
   }
 })
 

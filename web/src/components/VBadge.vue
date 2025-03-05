@@ -1,7 +1,7 @@
 <template>
   <div
     class="VBadge badge"
-    :class="[variant]"
+    :class="[variant, classes]"
     ref="badge"
   >
     <div
@@ -15,6 +15,7 @@
 
 <script setup>
 import { gsap } from '@/utils/gsap'
+import { pxToVw } from '@/utils/px'
 import { shallowRef } from 'vue'
 
 const badge = shallowRef(null)
@@ -25,43 +26,32 @@ defineProps({
     type: String,
     default: '',
   },
+  classes: {
+    type: String,
+    default: '',
+  },
 })
 
 defineExpose({
   animateSet: () => {
     gsap.set(badge.value, {
-      scale: 0,
-    })
-    gsap.set(inner.value, {
-      yPercent: 200,
+      clipPath: `inset(${badge.value.clientHeight / 2 + 1}px ${badge.value.clientWidth / 2 + 1}px round ${pxToVw(45)})`,
     })
   },
   animateIn: (delay = 0) => {
-    gsap.to(inner.value, {
-      yPercent: 0,
+    gsap.to(badge.value, {
+      clipPath: `inset(${pxToVw(-16)} ${pxToVw(-11)} round ${pxToVw(45)})`,
       duration: 0.65,
       ease: 'power2.out',
       delay: delay + 0.2,
     })
-    gsap.to(badge.value, {
-      scale: 1,
-      duration: 1,
-      ease: 'power2.inOut',
-      delay: delay,
-    })
   },
   animateOut: (delay = 0) => {
-    gsap.to(inner.value, {
-      yPercent: -200,
+    gsap.to(badge.value, {
+      clipPath: `inset(${badge.value.clientHeight / 2 + 1}px ${badge.value.clientWidth / 2 + 1}px round ${pxToVw(45)})`,
       duration: 0.65,
       ease: 'power2.in',
       delay: delay,
-    })
-    gsap.to(badge.value, {
-      scale: 0,
-      duration: 1,
-      ease: 'power2.inOut',
-      delay: delay + 0.1,
     })
   },
 })

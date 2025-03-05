@@ -160,7 +160,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: px-to-vw(100) px-to-vw(200);
+  padding: px-to-vw(100) px-to-vw(145);
   z-index: 0;
 }
 

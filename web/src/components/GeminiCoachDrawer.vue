@@ -45,7 +45,7 @@ defineExpose({
     await textContent.value.prepare()
     badge.value?.animateSet()
     gsap.set(bg.value, {
-      scaleY: 0,
+      yPercent: 100,
       transformOrigin: 'bottom',
     })
   },
@@ -53,7 +53,7 @@ defineExpose({
     textContent.value.animateIn(0.35)
     badge.value?.animateIn()
     gsap.to(bg.value, {
-      scaleY: 1,
+      yPercent: 0,
       duration: 1,
       ease: 'power2.inOut',
     })
@@ -62,7 +62,7 @@ defineExpose({
     textContent.value.animateOut(0)
     badge.value.animateOut()
     gsap.to(bg.value, {
-      scaleY: 0,
+      yPercent: 100,
       duration: 1,
       ease: 'power2.inOut',
       delay: textContent.value.splitText?.lines.length * 0.1 || 0,

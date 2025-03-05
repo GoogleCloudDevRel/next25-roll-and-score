@@ -1,26 +1,31 @@
 <template>
   <div class="center">
-    <div class="badge-top">
-      <VBadge ref="badge">
-        <IconBase variant="gemini" />
-        <VText
-          text="GEMINI COACH"
-          variant="tv-bold-72"
+    <div class="video-replay">
+      <div class="badge-top">
+        <VBadge
+          ref="badge"
+          variant="green"
+          classes="badge"
+        >
+          <VText
+            text="REPLAY"
+            variant="tv-bold-72"
+          />
+        </VBadge>
+      </div>
+      <div
+        class="clip"
+        ref="wrapper"
+      >
+        <video
+          src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          muted
+          class="video"
+          ref="video"
         />
-      </VBadge>
+      </div>
     </div>
-    <div
-      class="video-replay"
-      ref="wrapper"
-    >
-      <!-- 10sec version -->
-      <video
-        src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-        muted
-        class="video"
-        ref="video"
-      />
-    </div>
+    <VProgress />
   </div>
 </template>
 
@@ -30,8 +35,8 @@ import { ref } from 'vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { getQueryParam } from '@/utils/get-query-param'
 import VBadge from '@/components/VBadge.vue'
-import IconBase from '@/components/IconBase.vue'
 import VText from '@/components/VText.vue'
+import VProgress from '@/components/VProgress.vue'
 
 const video = ref(null)
 const wrapper = ref(null)
@@ -104,11 +109,11 @@ defineExpose({
   justify-content: center;
   align-items: center;
   height: 100%;
-  padding: px-to-vw(48, 4k);
+  padding: px-to-vw(220, 4k) px-to-vw(360, 4k);
 
   .badge-top {
     position: absolute;
-    top: px-to-vw(20, 4k);
+    transform: translateY(calc(-50% - px-to-vw(10, 4k)));
     z-index: 100;
 
     :deep(svg) {
@@ -118,16 +123,31 @@ defineExpose({
   }
 
   .video-replay {
-    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
     height: 100%;
-    border-radius: px-to-vw(50, 4k);
-    overflow: hidden;
+    aspect-ratio: 16 / 9;
+
+    .clip {
+      border-radius: px-to-vw(50, 4k);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 px-to-vw(6, 4k) #000,
+        px-to-vw(12, 4k) px-to-vw(16, 4k) #000;
+    }
 
     .video {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
+  }
+
+  .badge {
+    min-width: px-to-vw(618, 4k);
+    text-align: center;
+    justify-content: center;
   }
 }
 </style>
