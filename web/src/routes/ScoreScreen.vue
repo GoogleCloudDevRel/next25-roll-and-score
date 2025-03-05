@@ -1,5 +1,12 @@
 <template>
   <div class="center">
+    <div class="heading">
+      <VText
+        ref="heading"
+        variant="tv-bold-240"
+        text="Your Score"
+      />
+    </div>
     <ScoreBoard
       ref="scoreBoard"
       text-variant="tv-bold-575"
@@ -19,9 +26,12 @@ import { useScoreStore } from '@/store'
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { getQueryParam } from '@/utils/get-query-param'
+import VText from '@/components/VText.vue'
 
 const scoreBoard = ref(null)
 const progress = ref(null)
+const heading = ref(null)
+
 const { navigateTo } = useRouteManager()
 
 const store = useScoreStore()
@@ -30,6 +40,7 @@ const { score } = storeToRefs(store)
 
 defineExpose({
   animateSet: async () => {
+    await heading.value.prepare()
     await scoreBoard.value.animateSet()
     if (score.value === 0) {
       await progress.value.animateSet()
@@ -38,12 +49,14 @@ defineExpose({
   animateIn: async () => {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     await scoreBoard.value.animateIn()
+    heading.value.animateIn()
     if (score.value === 0) {
       await progress.value.animateIn()
     }
   },
   animateOut: () => {
     scoreBoard.value.animateOut()
+    heading.value.animateOut()
     if (store.maxTries === store.progress) {
       progress.value.animateOut()
     }
@@ -66,6 +79,10 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+.heading {
+  position: absolute;
+  top: px-to-vw(60, 4k);
+}
 .center {
   display: flex;
   justify-content: center;
