@@ -8,10 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix",
-    "format": "prettier --write src/",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "generate-component": "node tools/generate-component.js"
+    "format": "prettier --write src/"
   },
   "dependencies": {
     "@activetheory/split-text": "^1.1.2",
