@@ -17,7 +17,15 @@
       <div
         class="video-block"
         ref="videoBlock"
-      ></div>
+      >
+        <video
+          :src="videoUrl"
+          autoplay
+          muted
+          class="video"
+          ref="video"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -31,7 +39,7 @@ import { gsap } from '@/utils/gsap'
 
 const store = useHightlightsStore()
 
-const { score1, score2, score3, score4, score5 } = storeToRefs(store)
+const { score1, score2, score3, score4, score5, video: videoUrl } = storeToRefs(store)
 
 const leaderboard = shallowRef(null)
 const videoBlock = shallowRef(null)
@@ -90,10 +98,16 @@ defineExpose({
     0 0 0 px-to-vw(2) #000,
     px-to-vw(3) px-to-vw(4) 0 0 #000;
   border-radius: px-to-vw(25);
-  padding: px-to-vw(30);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  overflow: hidden;
+
+  .video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 </style>

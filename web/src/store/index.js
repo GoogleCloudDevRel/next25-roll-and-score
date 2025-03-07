@@ -27,6 +27,7 @@ export const useHightlightsStore = defineStore('highlights', {
     score3: 3456,
     score4: 2345,
     score5: 1234,
+    video: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
   }),
   actions: {
     setHighlights(highlights) {
@@ -35,6 +36,9 @@ export const useHightlightsStore = defineStore('highlights', {
       this.score3 = highlights[2]
       this.score4 = highlights[3]
       this.score5 = highlights[4]
+    },
+    setVideo(video) {
+      this.video = video
     }
   }
 })

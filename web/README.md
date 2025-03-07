@@ -33,7 +33,6 @@ npm run lint
 ```
 
 ## App Routes
-
   - `http://localhost:3000/!#/`: Big Tv 65"
   - `http://localhost:3000/!#/tv`: Tv 55"
   - `http://localhost:3000/!#/chromebook`: Chromebook
