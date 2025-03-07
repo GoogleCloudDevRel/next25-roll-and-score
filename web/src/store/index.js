@@ -54,6 +54,25 @@ export const useGeminiReportStore = defineStore('geminiReport', {
   }
 })
 
+export const useMobileScoreStore = defineStore('mobileScore', {
+  state: () => ({
+    leaderboard: 0,
+    finalScore: 0,
+    data: 0,
+    description: '',
+    videoSrc: '',
+  }),
+  actions: {
+    setData(data) {
+      this.leaderboard = data.leaderboard
+      this.finalScore = data.finalScore
+      this.data = data.data
+      this.description = data.description
+      this.videoSrc = data.videoSrc
+    }
+  }
+})
+
 window.setScore = (score) => {
   useScoreStore().setScore(score)
 }
@@ -66,4 +85,6 @@ window.setText = (text) => {
   useGeminiReportStore().setText(text)
 }
 
-
+window.setData = (data) => {
+  useMobileScoreStore().setData(data)
+}
