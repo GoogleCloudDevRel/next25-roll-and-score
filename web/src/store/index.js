@@ -1,4 +1,6 @@
 import { defineStore } from "pinia";
+import { db } from '@/config/firebaseConfig'; 
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 export const useScoreStore = defineStore('score', {
   state: () => ({
@@ -22,26 +24,45 @@ export const useScoreStore = defineStore('score', {
 
 export const useHightlightsStore = defineStore('highlights', {
   state: () => ({
-    score1: 5910,
-    score2: 4678,
-    score3: 3456,
-    score4: 2345,
-    score5: 1234,
+    score1: 0,
+    score2: 0,
+    score3: 0,
+    score4: 0,
+    score5: 0,
     video: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    unsubscribe: null,
   }),
   actions: {
-    setHighlights(highlights) {
-      this.score1 = highlights[0]
-      this.score2 = highlights[1]
-      this.score3 = highlights[2]
-      this.score4 = highlights[3]
-      this.score5 = highlights[4]
+    fetchTopScores() {
+      const scoresCollection = collection(db, 'gameScores');
+      const q = query(scoresCollection, orderBy('score', 'desc'), limit(5));
+
+      this.unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const scores = [];
+        querySnapshot.forEach((doc) => {
+          scores.push(doc.data().score);
+        })
+
+        this.score1 = scores[0] || 0; // Use 0 as default if scores[0] is undefined
+        this.score2 = scores[1] || 0;
+        this.score3 = scores[2] || 0;
+        this.score4 = scores[3] || 0;
+        this.score5 = scores[4] || 0;
+      });
+    },
+    unsubscribeFromData() {
+      if (this.unsubscribe) {
+        this.unsubscribe();
+      }
     },
     setVideo(video) {
-      this.video = video
-    }
-  }
-})
+      this.video = "https://www.youtube.com/watch?v=3aoxOtMM2rc";
+    },
+  },
+  onDispose() {
+    this.unsubscribeFromData();
+  },
+});
 
 export const useGeminiReportStore = defineStore('geminiReport', {
   state: () => ({
@@ -73,18 +94,18 @@ export const useMobileScoreStore = defineStore('mobileScore', {
   }
 })
 
-window.setScore = (score) => {
-  useScoreStore().setScore(score)
-}
+// window.setScore = (score) => {
+//   useScoreStore().setScore(score)
+// }
 
-window.setHighlights = (highlights) => {
-  useHightlightsStore().setHighlights(highlights)
-}
+// window.setHighlights = (highlights) => {
+//   useHightlightsStore().setHighlights(highlights)
+// }
 
-window.setText = (text) => {
-  useGeminiReportStore().setText(text)
-}
+// window.setText = (text) => {
+//   useGeminiReportStore().setText(text)
+// }
 
-window.setData = (data) => {
-  useMobileScoreStore().setData(data)
-}
+// window.setData = (data) => {
+//   useMobileScoreStore().setData(data)
+// }
