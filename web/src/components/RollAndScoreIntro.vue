@@ -38,7 +38,7 @@
       ref="sub"
       class="sub"
       variant="tv-bold-96"
-      text="Elevate Your Gameplay with Gemini 2.0"
+      text="Evolve Arcade with AI"
     />
   </div>
 </template>
