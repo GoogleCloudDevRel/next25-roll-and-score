@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import { shallowRef, onMounted } from 'vue'
+import { shallowRef, onMounted, onUnmounted } from 'vue'
 import LeaderBoard from './leaderboard/LeaderBoard.vue'
 import { useHightlightsStore } from '@/store'
 import { storeToRefs } from 'pinia'
@@ -42,6 +42,10 @@ const store = useHightlightsStore()
 onMounted(() => {
   store.fetchTopScores();
 });
+
+onUnmounted(() => {
+  store.stopFetchingTopScores();
+})
 
 const { score1, score2, score3, score4, score5, video: videoUrl } = storeToRefs(store)
 

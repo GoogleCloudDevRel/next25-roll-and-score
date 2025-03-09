@@ -33,7 +33,7 @@ export const useHightlightsStore = defineStore('highlights', {
     unsubscribe: null,
   }),
   actions: {
-    fetchTopScores() {
+    async fetchTopScores() {
       const scoresCollection = collection(db, 'gameScores');
       const q = query(scoresCollection, orderBy('score', 'desc'), limit(5));
 
@@ -50,7 +50,7 @@ export const useHightlightsStore = defineStore('highlights', {
         this.score5 = scores[4] || 0;
       });
     },
-    unsubscribeFromData() {
+    stopFetchingTopScores() {
       if (this.unsubscribe) {
         this.unsubscribe();
       }
@@ -58,10 +58,7 @@ export const useHightlightsStore = defineStore('highlights', {
     setVideo(video) {
       this.video = "https://www.youtube.com/watch?v=3aoxOtMM2rc";
     },
-  },
-  onDispose() {
-    this.unsubscribeFromData();
-  },
+  }
 });
 
 export const useGeminiReportStore = defineStore('geminiReport', {
