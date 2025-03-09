@@ -9,7 +9,7 @@ distro==1.9.0
 Flask==3.1.0
 iniconfig==2.0.0
 itsdangerous==2.2.0
-Jinja2==3.1.5
+Jinja2==3.1.6
 MarkupSafe==3.0.2
 ninja==1.11.1.1
 numpy==2.1.2
