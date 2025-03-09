@@ -1,0 +1,58 @@
+name: Development
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: activetheory/build-v8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Authenticate AT Services
+        uses: activetheory/hydra-auth-action@v2.2.2
+      - name: Restore build cache
+        uses: actions/cache@v4
+        env:
+          cache-name: hydra-deploy-cache
+        with:
+          path: |
+            ~/.npm
+            ./node_modules
+            ./.hydra
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install Dependencies
+        run: |
+          npm i
+          npm i @hermes/deploy@2.0.7
+      - name: Build
+        env:
+          AT_FIREBASE_HOSTING_ACCOUNT: ${{ secrets.AT_FIREBASE_HOSTING_ACCOUNT }}
+        run: |
+          echo $AT_FIREBASE_HOSTING_ACCOUNT > service-account.json
+          gcloud auth activate-service-account --key-file ./service-account.json  --quiet
+          npm run build-storybook
+          cp -a storybook-static/fonts storybook-static/assets
+          cp -a storybook-static Build
+      - name: Deploy
+        run: |
+          npx hermes-deploy --name google-advocacy-demos --auth g00g:gl3
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: google-advocacy-demos
+          SLACK_COLOR: success
+          SLACK_ICON: https://github.com/activetheory.png?size=48
+          SLACK_TITLE: 'Success deployment'
+          SLACK_USERNAME: 'GitHub Actions'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: 'Deployed to *<https://google-advocacy-demos.activetheory.dev|DEV>*'
+          SLACK_FOOTER: 'https://google-advocacy-demos.activetheory.dev'
+          MSG_MINIMAL: true
