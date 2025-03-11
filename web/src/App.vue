@@ -17,12 +17,16 @@ import ChromebookView from './views/ChromebookView.vue'
 import NotFoundView from './views/NotFoundView.vue'
 import BigTvView from './views/BigTvView.vue'
 import PhoneView from './views/PhoneView.vue'
+import ControlView from './views/ControlView.vue'
+import LoginView from './views/LoginView.vue'
 
 const routes = {
   '/': BigTvView,
   '/tv': TvView,
   '/chromebook': ChromebookView,
   '/phone': PhoneView,
+  '/login': LoginView,
+  '/control': ControlView,
 }
 
 const currentPath = ref(window.location.hash)
