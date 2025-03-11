@@ -1,10 +1,11 @@
 <template>
   <button
     ref="el"
-    :class="{ VButton: true, [variant]: true, [size]: true }"
+    :class="{ VButton: true, [variant]: true, [size]: true, disabled: disabled }"
     @click="handleClick"
     @mouseenter="() => handleHover(true)"
     @mouseleave="() => handleHover(false)"
+    :disabled="disabled"
   >
     <div
       ref="bg"
@@ -81,11 +82,16 @@ const props = defineProps({
     type: String,
     default: 'primary',
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const handleClick = (e) => {
   e.preventDefault()
   // Add any additional click handling logic here
+  if (props.disabled) return
   props.onClick()
 }
 
@@ -367,11 +373,30 @@ defineExpose({
       &.background-yellow {
         background: $brandYellow;
       }
+      &.background-blue {
+        background: $brandBlue;
+      }
+      &.background-red {
+        background: $brandRed;
+      }
+      &.background-grey {
+        background: grey;
+      }
     }
 
     &:hover {
       box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 1);
       transform: translateX(1px) translateY(3px);
+    }
+  }
+  .VButton.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none; // very important.
+    &:hover {
+      .bg::after {
+        transform: scale(0);
+      }
     }
   }
 }
