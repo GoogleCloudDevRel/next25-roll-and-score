@@ -95,24 +95,30 @@ defineExpose({
   stroke-width: px-to-vw(5, 4k);
   // filter: drop-shadow(px-to-vw(8, 4k) px-to-vw(10, 4k) rgb(0, 0, 0));
   paint-order: fill stroke;
-  transition: transform 0.6s ease-in-out;
+  transition:
+    transform 0.6s ease-in-out,
+    opacity 0.3s ease-in-out;
+  opacity: 0.2;
 
   &.active {
     transform: scale(1.1) rotate(360deg);
+    opacity: 1;
   }
 }
 
 .dot {
   width: px-to-vw(120, 4k);
   height: px-to-vw(120, 4k);
-  background-color: #666666;
+  background-color: #fff;
   border-radius: 50%;
   box-shadow:
     0 0 0 px-to-vw(5, 4k) rgb(0, 0, 0),
     px-to-vw(15, 4k) px-to-vw(20, 4k) rgb(0, 0, 0);
+  transition: opacity 0.3s ease-in-out;
+  opacity: 0.2;
 
   &.active {
-    background-color: #fff !important;
+    opacity: 1;
   }
 }
 </style>
