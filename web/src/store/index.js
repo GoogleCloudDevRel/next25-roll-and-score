@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { db } from '@/config/firebaseConfig'; 
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 
 export const useScoreStore = defineStore('score', {
   state: () => ({
@@ -34,13 +34,13 @@ export const useHightlightsStore = defineStore('highlights', {
   }),
   actions: {
     async fetchTopScores() {
-      const scoresCollection = collection(db, 'gameScores');
-      const q = query(scoresCollection, orderBy('score', 'desc'), limit(5));
+      const scoresCollection = collection(db, 'games');
+      const q = query(scoresCollection, orderBy('totalScore', 'desc'), limit(5));
 
       this.unsubscribe = onSnapshot(q, (querySnapshot) => {
         const scores = [];
         querySnapshot.forEach((doc) => {
-          scores.push(doc.data().score);
+          scores.push(doc.data().totalScore);
         })
 
         this.score1 = scores[0] || 0; // Use 0 as default if scores[0] is undefined
@@ -90,19 +90,3 @@ export const useMobileScoreStore = defineStore('mobileScore', {
     }
   }
 })
-
-// window.setScore = (score) => {
-//   useScoreStore().setScore(score)
-// }
-
-// window.setHighlights = (highlights) => {
-//   useHightlightsStore().setHighlights(highlights)
-// }
-
-// window.setText = (text) => {
-//   useGeminiReportStore().setText(text)
-// }
-
-// window.setData = (data) => {
-//   useMobileScoreStore().setData(data)
-// }
