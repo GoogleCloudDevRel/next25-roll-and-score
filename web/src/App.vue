@@ -19,6 +19,7 @@ import BigTvView from './views/BigTvView.vue'
 import PhoneView from './views/PhoneView.vue'
 import ControlView from './views/ControlView.vue'
 import LoginView from './views/LoginView.vue'
+import GameMasterView from './views/GameMasterView.vue'
 
 const routes = {
   '/': BigTvView,
@@ -27,6 +28,7 @@ const routes = {
   '/phone': PhoneView,
   '/login': LoginView,
   '/control': ControlView,
+  '/gamemaster': GameMasterView,
 }
 
 const currentPath = ref(window.location.hash)
