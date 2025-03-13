@@ -16,7 +16,7 @@
       :text="
         rank > 0 && rankStep === 0
           ? `Congratulations, you ranked <span class='highlight'>#${rank}</span> in today’s Roll & Score`
-          : 'Great job! Now approach the staff to collect to your comprehensive analysis!'
+          : `Great job! Visit <span class='highlight'>Chromebook ${device}</span> for your comprehensive analysis!`
       "
     />
     <VConfetti ref="confetti" />
@@ -38,7 +38,7 @@ const confetti = ref(null)
 const scoreStore = useScoreStore()
 const highlightsStore = useHightlightsStore()
 
-const { score } = storeToRefs(scoreStore)
+const { score, device } = storeToRefs(scoreStore)
 const { score1, score2, score3, score4, score5 } = storeToRefs(highlightsStore)
 
 const rank = computed(() => {

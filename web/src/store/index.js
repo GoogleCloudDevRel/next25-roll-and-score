@@ -8,6 +8,7 @@ export const useScoreStore = defineStore('score', {
     maxTries: 9,
     maxSteps: 3,
     triesPerStep: 3,
+    device: '1' // or '2'
   }),
   actions: {
     setScore(score) {
@@ -21,6 +22,9 @@ export const useScoreStore = defineStore('score', {
         this.score = score
       }
     },
+    setDevice(device) {
+      this.device = device
+    }
   }
 })
 
