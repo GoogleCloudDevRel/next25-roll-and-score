@@ -3,18 +3,22 @@ import { defineStore } from "pinia";
 export const useScoreStore = defineStore('score', {
   state: () => ({
     score: 0,
-    progress: 0,
-    maxTries: 5,
+    tries: 0,
+    step: 0,
+    maxTries: 9,
+    maxSteps: 3,
+    triesPerStep: 3,
   }),
   actions: {
-    setScore(score, progress = null) {
-      if (this.progress < this.maxTries) {
-        this.score = score
-        if (typeof progress === 'number') {
-          this.progress = progress
-        } else {
-          this.progress++
+    setScore(score) {
+      if (this.tries < this.maxTries) {
+        this.tries++
+
+        if(this.tries === this.maxTries) {
+          this.step++
         }
+
+        this.score = score
       }
     },
   }
@@ -22,11 +26,11 @@ export const useScoreStore = defineStore('score', {
 
 export const useHightlightsStore = defineStore('highlights', {
   state: () => ({
-    score1: 5910,
-    score2: 4678,
-    score3: 3456,
-    score4: 2345,
-    score5: 1234,
+    score1: 600,
+    score2: 500,
+    score3: 400,
+    score4: 200,
+    score5: 100,
     video: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
   }),
   actions: {

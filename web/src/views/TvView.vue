@@ -54,7 +54,19 @@ const {
 } = useRouteManager()
 
 let index = 0
-const navigationFlow = ['intro', 'welcome', 'start', 'score', 'replay', 'report', 'score', 'final']
+const navigationFlow = [
+  'intro',
+  'welcome',
+  'start',
+  'score',
+  'replay',
+  'report',
+  'score',
+  'replay',
+  'report',
+  'score',
+  'final',
+]
 function handleClick(e) {
   e.preventDefault()
   if (isTransitioning.value) return
