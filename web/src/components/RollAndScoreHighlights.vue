@@ -95,9 +95,9 @@ defineExpose({
   text-align: center;
   background: #bebebe;
   box-shadow:
-    0 0 0 px-to-vw(2) #000,
-    px-to-vw(3) px-to-vw(4) 0 0 #000;
-  border-radius: px-to-vw(25);
+    0 0 0 px-to-vw(3, 4k) #000,
+    px-to-vw(10, 4k) px-to-vw(10, 4k) 0 0 #000;
+  border-radius: px-to-vw(50, 4k);
   display: flex;
   flex-direction: column;
   align-items: center;
