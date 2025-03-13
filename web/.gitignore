@@ -34,4 +34,5 @@ storybook-static
 .vite
 
 .env
-.env*
+.env.*
+!.env.template
