@@ -23,7 +23,7 @@ import VProgress from '@/components/VProgress.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { useScoreStore } from '@/store'
 
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { getQueryParam } from '@/utils/get-query-param'
 import VText from '@/components/VText.vue'
@@ -36,7 +36,18 @@ const { navigateTo } = useRouteManager()
 
 const store = useScoreStore()
 
-const { score, maxTries, tries } = storeToRefs(store)
+const { score, maxTries, tries, triesPerStep } = storeToRefs(store)
+
+watch(
+  () => tries.value,
+  async (value) => {
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    if (value % triesPerStep.value === 0) {
+      navigateTo(value === maxTries.value ? 'final' : 'replay')
+    }
+  },
+)
 
 defineExpose({
   animateSet: async () => {
@@ -62,6 +73,7 @@ defineExpose({
     }
   },
   animateIdle: async () => {
+    if (!getQueryParam('autoScore')) return
     await new Promise((resolve) => setTimeout(resolve, 2500))
     store.setScore(tries.value >= 6 ? 350 : tries.value >= 3 ? 200 : 50)
     await new Promise((resolve) => setTimeout(resolve, 2500))
@@ -70,7 +82,6 @@ defineExpose({
     store.setScore(tries.value >= 6 ? 550 : tries.value >= 3 ? 300 : 125)
     await new Promise((resolve) => setTimeout(resolve, 2500))
     if (getQueryParam('manual')) return
-    navigateTo(tries.value === maxTries.value ? 'final' : 'replay')
   },
 })
 </script>

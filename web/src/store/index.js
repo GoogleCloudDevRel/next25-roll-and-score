@@ -1,3 +1,4 @@
+import { getQueryParam } from "@/utils/get-query-param";
 import { defineStore } from "pinia";
 
 export const useScoreStore = defineStore('score', {
@@ -8,7 +9,9 @@ export const useScoreStore = defineStore('score', {
     maxTries: 9,
     maxSteps: 3,
     triesPerStep: 3,
-    device: '1' // or '2'
+    device: getQueryParam('device', false) || '1',
+    gameStarted: false,
+    geminiReport: null,
   }),
   actions: {
     setScore(score) {
@@ -21,9 +24,46 @@ export const useScoreStore = defineStore('score', {
 
         this.score = score
       }
+
+      if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
+        console.log('setGeminiReport')
+        this.setGeminiReport()
+      }
+
+      if(this.tries === this.maxTries) {
+        this.gameStarted = false
+        this.geminiReport = null
+      }
+    },
+    addScore(score) {
+      if (this.tries < this.maxTries) {
+        this.tries++
+
+        if(this.tries === this.maxTries) {
+          this.step++
+        }
+
+        if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
+          console.log('setGeminiReport')
+          this.setGeminiReport()
+        }
+
+        this.score += score
+      }
+
+      if(this.tries === this.maxTries) {
+        this.gameStarted = false
+        this.geminiReport = null
+      }
     },
     setDevice(device) {
       this.device = device
+    },
+    setGameStarted(gameStarted) {
+      this.gameStarted = gameStarted
+    },
+    setGeminiReport(geminiReport = 'Is that the Hulk playing?! Try throwing a little more gently, and slightly more to the right!') {
+      this.geminiReport = geminiReport
     }
   }
 })
@@ -51,17 +91,6 @@ export const useHightlightsStore = defineStore('highlights', {
   }
 })
 
-export const useGeminiReportStore = defineStore('geminiReport', {
-  state: () => ({
-    text: 'Is that the Hulk playing?! Try throwing a little more gently, and slightly more to the right!',
-  }),
-  actions: {
-    setText(text) {
-      this.text = text
-    }
-  }
-})
-
 export const useMobileScoreStore = defineStore('mobileScore', {
   state: () => ({
     leaderboard: 0,
@@ -85,14 +114,22 @@ window.setScore = (score) => {
   useScoreStore().setScore(score)
 }
 
+window.addScore = (score) => {
+  useScoreStore().addScore(score)
+}
+
 window.setHighlights = (highlights) => {
   useHightlightsStore().setHighlights(highlights)
 }
 
-window.setText = (text) => {
-  useGeminiReportStore().setText(text)
+window.setGeminiReport = (text) => {
+  useScoreStore().setGeminiReport(text)
 }
 
 window.setData = (data) => {
   useMobileScoreStore().setData(data)
+}
+
+window.setGameStarted = (gameStarted) => {
+  useScoreStore().setGameStarted(gameStarted)
 }

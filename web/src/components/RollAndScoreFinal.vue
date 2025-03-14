@@ -23,7 +23,7 @@
     >
       <div
         class="block score"
-        ref="blocks"
+        :ref="setBlocks"
       >
         <VText
           ref="scoreText"
@@ -41,7 +41,7 @@
       </div>
       <div
         class="block stats"
-        ref="blocks"
+        :ref="setBlocks"
       >
         <VText
           ref="statsText"
@@ -58,7 +58,7 @@
       </div>
       <div
         class="block video-replay"
-        ref="blocks"
+        :ref="setBlocks"
       >
         <video
           src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
@@ -92,6 +92,10 @@ const btn = ref()
 const blocks = ref([])
 const qr = ref()
 
+const setBlocks = (el) => {
+  blocks.value.push(el)
+}
+
 const props = defineProps({
   score: {
     type: Number,
@@ -100,7 +104,6 @@ const props = defineProps({
 })
 
 onMounted(async () => {
-  blocks.value = Array.from(dashboard.value.querySelectorAll('.block'))
   qr.value = await generateQR(
     window.location.origin + '#/phone?id=' + Math.random().toString(36).substring(2, 15),
   )

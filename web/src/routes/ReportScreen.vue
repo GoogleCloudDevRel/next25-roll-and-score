@@ -15,12 +15,12 @@ import VProgress from '@/components/VProgress.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
-import { useGeminiReportStore } from '@/store'
 import { storeToRefs } from 'pinia'
+import { useScoreStore } from '@/store'
 
 const geminiCoach = ref(null)
-const geminiReportStore = useGeminiReportStore()
-const { text: geminiReport } = storeToRefs(geminiReportStore)
+const scoreStore = useScoreStore()
+const { geminiReport } = storeToRefs(scoreStore)
 
 const { navigateTo } = useRouteManager()
 

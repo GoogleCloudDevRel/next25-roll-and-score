@@ -32,3 +32,7 @@ coverage
 Build
 storybook-static
 .vite
+
+.env
+.env.*
+!.env.template

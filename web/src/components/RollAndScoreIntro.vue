@@ -44,16 +44,29 @@
 </template>
 
 <script setup>
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
 import VText from './VText.vue'
 import { gsap } from '@/utils/gsap'
-
+import { useScoreStore } from '@/store'
+import { storeToRefs } from 'pinia'
+import { useRouteManager } from '@/router/useRouteManager'
 const svg = shallowRef(null)
 const pre = shallowRef(null)
 const text = shallowRef(null)
 const sub = shallowRef(null)
 
-console.log('rerender')
+const { gameStarted } = storeToRefs(useScoreStore())
+
+const { navigateTo } = useRouteManager()
+
+watch(
+  () => gameStarted.value,
+  (value) => {
+    if (value) {
+      navigateTo('welcome')
+    }
+  },
+)
 
 defineExpose({
   animateSet: async () => {
@@ -75,7 +88,7 @@ defineExpose({
       yPercent: 130,
     })
     sub.value.animateIn(1.5)
-    await gsap.to(svg.value, {
+    gsap.to(svg.value, {
       scale: 1,
       duration: 2.5,
       ease: 'elastic.out(1,0.5)',

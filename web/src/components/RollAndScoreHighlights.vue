@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper">
+  <div :class="['wrapper', { 'wrapper--device-1': scoreStore.device === '1' }]">
     <div
       class="highlights"
       ref="highlights"
@@ -36,8 +36,10 @@ import LeaderBoard from './leaderboard/LeaderBoard.vue'
 import { useHightlightsStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { gsap } from '@/utils/gsap'
+import { useScoreStore } from '@/store'
 
 const store = useHightlightsStore()
+const scoreStore = useScoreStore()
 
 const { score1, score2, score3, score4, score5, video: videoUrl } = storeToRefs(store)
 
@@ -74,6 +76,15 @@ defineExpose({
   justify-content: center;
   min-height: 100vh;
   padding: px-to-vw(48, 4k);
+
+  &--device-1 {
+    .sidebar {
+      grid-column-start: 2;
+      grid-column-end: 3;
+      grid-row-start: 1;
+      grid-row-end: 2;
+    }
+  }
 }
 
 .highlights {

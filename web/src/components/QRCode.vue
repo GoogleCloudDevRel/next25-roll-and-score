@@ -1,6 +1,6 @@
 <template>
   <div
-    class="qr-code"
+    :class="['qr-code', { 'qr-code--device-1': scoreStore.device === '1' }]"
     ref="qrCodeRef"
   >
     <img
@@ -18,7 +18,10 @@
 import { ref, onMounted } from 'vue'
 import { generateQR } from '@/utils/qr'
 import VText from './VText.vue'
+import { useScoreStore } from '@/store'
+
 const qrCodeRef = ref(null)
+const scoreStore = useScoreStore()
 
 const props = defineProps({
   value: {
@@ -37,7 +40,7 @@ onMounted(async () => {
 <style lang="scss">
 .qr-code {
   position: absolute;
-  bottom: px-to-vw(100, 4k);
+  top: px-to-vw(100, 4k);
   right: px-to-vw(100, 4k);
   background: #fff;
   border-radius: px-to-vw(32, 4k);
@@ -54,6 +57,13 @@ onMounted(async () => {
   z-index: 9999;
   color: $brandBlue;
   text-transform: uppercase;
+
+  &--device-1 {
+    top: px-to-vw(100, 4k);
+    left: px-to-vw(100, 4k);
+    bottom: unset;
+    right: unset;
+  }
 
   * {
     white-space: nowrap;
