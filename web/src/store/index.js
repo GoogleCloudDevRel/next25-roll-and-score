@@ -1,6 +1,35 @@
 import { getQueryParam } from "@/utils/get-query-param";
 import { defineStore } from "pinia";
 
+// TODO: fetch video replay
+const fetchVideoReplay = async () => {
+  try {
+    const response = await fetch('/api/video-replay');
+    const data = await response.json();
+    console.log(data)
+  } catch (error) {
+    console.error('Error fetching video replay:', error);
+  } finally {
+    useScoreStore().setVideoReplay('https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')
+  }
+}
+
+// TODO: fetch gemini report
+const fetchGeminiReport = async () => {
+  await fetchVideoReplay()
+
+  try {
+    const response = await fetch('/api/gemini-report');
+    const data = await response.json();
+    console.log(data)
+    useScoreStore().setGeminiReport(data.geminiReport);
+  } catch (error) {
+    console.error('Error fetching gemini report:', error);
+  } finally {
+    useScoreStore().setGeminiReport('This is a test report')
+  }
+}
+
 export const useScoreStore = defineStore('score', {
   state: () => ({
     score: 0,
@@ -10,6 +39,7 @@ export const useScoreStore = defineStore('score', {
     maxSteps: 3,
     triesPerStep: 3,
     device: getQueryParam('device', false) || '1',
+    replayVideo: null,
     gameStarted: false,
     geminiReport: null,
   }),
@@ -26,8 +56,7 @@ export const useScoreStore = defineStore('score', {
       }
 
       if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
-        console.log('setGeminiReport')
-        this.setGeminiReport()
+        fetchGeminiReport()
       }
 
       if(this.tries === this.maxTries) {
@@ -44,8 +73,7 @@ export const useScoreStore = defineStore('score', {
         }
 
         if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
-          console.log('setGeminiReport')
-          this.setGeminiReport()
+          fetchGeminiReport()
         }
 
         this.score += score
@@ -62,8 +90,23 @@ export const useScoreStore = defineStore('score', {
     setGameStarted(gameStarted) {
       this.gameStarted = gameStarted
     },
-    setGeminiReport(geminiReport = 'Is that the Hulk playing?! Try throwing a little more gently, and slightly more to the right!') {
+    setGeminiReport(geminiReport) {
       this.geminiReport = geminiReport
+    },
+    setVideoReplay(videoReplay) {
+      this.replayVideo = videoReplay
+    },
+    reset() {
+      this.score = 0
+      this.tries = 0
+      this.step = 0
+      this.maxTries = 9
+      this.maxSteps = 3
+      this.triesPerStep = 3
+      this.device = getQueryParam('device', false) || '1'
+      this.replayVideo = null
+      this.gameStarted = false
+      this.geminiReport = null
     }
   }
 })

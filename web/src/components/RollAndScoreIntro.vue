@@ -78,6 +78,7 @@ defineExpose({
     gsap.set(svg.value, {
       scale: 0,
     })
+    useScoreStore().reset()
   },
   animateIn: async () => {
     pre.value.animateIn()
