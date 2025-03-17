@@ -46,7 +46,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 
 const email = ref('')
 const password = ref('')

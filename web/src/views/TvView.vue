@@ -21,7 +21,7 @@ import BackgroundRings from '@/components/background/BackgroundRings.vue'
 import RollAndScoreIntro from '@/components/RollAndScoreIntro.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 
-import { nextTick, onMounted, onUnmounted, shallowRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 
 import WelcomeScreen from '../routes/WelcomeScreen.vue'
 import StartScreen from '../routes/StartScreen.vue'
@@ -30,7 +30,10 @@ import ReplayScreen from '../routes/ReplayScreen.vue'
 import ReportScreen from '../routes/ReportScreen.vue'
 import FinalScreen from '../routes/FinalScreen.vue'
 import { getQueryParam } from '@/utils/get-query-param'
-import { useScoreStore } from '@/store'
+import { subscribeGameStarted, subscribeToScoreChanges, useScoreStore } from '@/store'
+import { storeToRefs } from 'pinia'
+import { signIn } from '@/config/firebaseConfig'
+
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
 
@@ -45,6 +48,17 @@ const routes = {
 }
 
 const { registerRoutes, navigateTo, isTransitioning } = useRouteManager()
+
+const { gameStarted } = storeToRefs(useScoreStore())
+
+watch(
+  () => !gameStarted.value && !isTransitioning.value,
+  (v) => {
+    if (v) {
+      navigateTo('intro')
+    }
+  },
+)
 
 let index = 0
 const navigationFlow = [
@@ -67,40 +81,14 @@ function handleClick(e) {
   navigateTo(navigationFlow[++index])
 }
 
+let unsubscribeGameStarted = null
+let unsubscribeScoreChanges = null
+
 // Register routes with their animations
 onMounted(async () => {
   const initialView = navigationFlow.find((key) => getQueryParam('view', false) === key)
   index = navigationFlow.indexOf(initialView)
   index = index === -1 ? 0 : index
-
-  const scoreStore = useScoreStore()
-
-  if (['replay', 'report'].includes(initialView)) {
-    scoreStore.setScore(2345, 3)
-  }
-
-  if (initialView === 'final') {
-    switch (getQueryParam('rank', false)) {
-      case '1':
-        scoreStore.setScore(5910)
-        break
-      case '2':
-        scoreStore.setScore(4678)
-        break
-      case '3':
-        scoreStore.setScore(3456)
-        break
-      case '4':
-        scoreStore.setScore(2345)
-        break
-      case '5':
-        scoreStore.setScore(1234)
-        break
-      default:
-        scoreStore.setScore(1000)
-        break
-    }
-  }
 
   registerRoutes(routes, activeRoutes, activeRoutesRef)
 
@@ -109,9 +97,16 @@ onMounted(async () => {
   navigateTo(initialView ?? navigationFlow[0])
 
   document.body.addEventListener('click', handleClick)
+
+  await signIn()
+
+  unsubscribeGameStarted = subscribeGameStarted()
+  unsubscribeScoreChanges = subscribeToScoreChanges()
 })
 
 onUnmounted(() => {
+  unsubscribeGameStarted()
+  unsubscribeScoreChanges()
   document.body.removeEventListener('click', handleClick)
 })
 </script>

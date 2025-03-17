@@ -55,14 +55,17 @@ const pre = shallowRef(null)
 const text = shallowRef(null)
 const sub = shallowRef(null)
 
-const { gameStarted } = storeToRefs(useScoreStore())
+const { gameStarted, score } = storeToRefs(useScoreStore())
 
-const { navigateTo } = useRouteManager()
+const { navigateTo, isTransitioning } = useRouteManager()
 
 watch(
-  () => gameStarted.value,
+  () => gameStarted.value && !isTransitioning.value,
   (value) => {
-    if (value) {
+    // If the game has started and the score is greater than 0, navigate to the score screen
+    if (value && score.value > 0) {
+      navigateTo('score')
+    } else {
       navigateTo('welcome')
     }
   },
@@ -80,25 +83,29 @@ defineExpose({
     })
     useScoreStore().reset()
   },
-  animateIn: async () => {
-    pre.value.animateIn()
-    text.value.animateIn(0.8, {
-      ease: 'elastic.out(1,0.5)',
-      duration: 1.2,
-      stagger: 0.075,
-      yPercent: 130,
-    })
-    sub.value.animateIn(1.5)
-    gsap.to(svg.value, {
-      scale: 1,
-      duration: 2.5,
-      ease: 'elastic.out(1,0.5)',
-      delay: 0.6,
-    })
+  animateIn: async (to, from) => {
+    if (from) {
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+    }
+    await Promise.all([
+      pre.value.animateIn(),
+      text.value.animateIn(0.8, {
+        ease: 'elastic.out(1,0.5)',
+        duration: 1.2,
+        stagger: 0.075,
+        yPercent: 130,
+      }),
+      sub.value.animateIn(1.5),
+      gsap.to(svg.value, {
+        scale: 1,
+        duration: 2.5,
+        ease: 'elastic.out(1,0.5)',
+        delay: 0.6,
+      }),
+    ])
   },
   animateOut: async () => {
-    pre.value.animateOut()
-    text.value.animateOut(0, { yPercent: -130 })
+    pre.value.animateOut(), text.value.animateOut(0, { yPercent: -130 })
     sub.value.animateOut()
     await gsap.to(svg.value, {
       scale: 0,

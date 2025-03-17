@@ -27,11 +27,10 @@
 import GeminiCoachDrawer from '@/components/GeminiCoachDrawer.vue'
 import ScoreBoard from '@/components/ScoreBoard.vue'
 import VConfetti from '@/components/VConfetti.vue'
-import { computed, ref, watch } from 'vue'
-import { useHightlightsStore, useScoreStore } from '@/store'
+import { computed, ref } from 'vue'
+import { useHightlightsStore, useScoreStore, saveEndGame } from '@/store'
 import { storeToRefs } from 'pinia'
-import { useRouteManager } from '@/router/useRouteManager'
-import { deferred } from '@/utils/deferred'
+
 const drawer = ref(null)
 const scoreBoard = ref(null)
 const confetti = ref(null)
@@ -41,11 +40,6 @@ const highlightsStore = useHightlightsStore()
 
 const { score, device } = storeToRefs(scoreStore)
 const { score1, score2, score3, score4, score5 } = storeToRefs(highlightsStore)
-const { gameStarted } = storeToRefs(scoreStore)
-
-const { navigateTo } = useRouteManager()
-
-const isAnimated = deferred()
 
 const rank = computed(() => {
   if (score.value >= score1.value) return 1
@@ -55,17 +49,6 @@ const rank = computed(() => {
   if (score.value >= score5.value) return 5
   return 0
 })
-
-watch(
-  () => gameStarted.value,
-  async (v) => {
-    if (!v) {
-      // TODO: wait 5s then restart the game
-      await new Promise.all([isAnimated, new Promise((resolve) => setTimeout(resolve, 5000))])
-      navigateTo('intro')
-    }
-  },
-)
 
 const rankStep = ref(0)
 
@@ -89,7 +72,8 @@ defineExpose({
       drawer.value.badge().animateIn()
       drawer.value.text().animateIn()
     }
-    isAnimated.resolve()
+    await new Promise((resolve) => setTimeout(resolve, 5000))
+    await saveEndGame()
   },
   animateOut: async () => {
     await drawer.value.animateOut()

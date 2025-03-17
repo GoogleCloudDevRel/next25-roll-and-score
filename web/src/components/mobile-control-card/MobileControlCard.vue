@@ -51,9 +51,10 @@
 import MobileControlCardBacking from './MobileContorlCardBacking.vue'
 import VText from '@/components/VText.vue'
 import VButton from '@/components/VButton.vue'
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore'
-import { auth, db, onAuthStateChanged } from '@/config/firebaseConfig'
+import { reactive, onMounted, onUnmounted } from 'vue'
+import { doc, updateDoc, onSnapshot, addDoc, collection } from 'firebase/firestore'
+import { db, auth } from '@/config/firebaseConfig'
+import { onAuthStateChanged } from 'firebase/auth'
 
 const gameStations = reactive([])
 const unsubscribeListeners = {} // Store unsubscribe functions
@@ -66,7 +67,7 @@ onAuthStateChanged(auth, (user) => {
   } else {
     // User is signed out.
     console.log('User is signed out.')
-    window.location.hash = '/login'  
+    window.location.hash = '/login'
   }
 })
 
@@ -96,6 +97,7 @@ const setupListeners = () => {
             gameStations.push({
               stationID: stationID,
               isRunning: data.isRunning || false,
+              gameId: data.gameId || null,
             })
           }
         } else {
@@ -104,6 +106,7 @@ const setupListeners = () => {
           gameStations.push({
             stationID: stationID,
             isRunning: false,
+            gameId: null,
           })
         }
       },
@@ -119,10 +122,31 @@ const toggleStatus = async (stationID) => {
   if (station) {
     station.isRunning = !station.isRunning
     try {
+      const gamesCollection = collection(db, 'games')
+      if (station.isRunning) {
+        const newGame = await addDoc(gamesCollection, {
+          endTime: null,
+          startTime: new Date(),
+          gameStatus: 'playing',
+          stationId: `station${stationID}`,
+          scores: [],
+          totalScore: 0,
+        })
+        station.gameId = newGame.id
+      } else {
+        const gameRef = doc(gamesCollection, station.gameId)
+        await updateDoc(gameRef, {
+          endTime: new Date(),
+          gameStatus: 'cancelled',
+        })
+      }
+
       const docRef = doc(db, 'gameStations', `station${stationID}`)
       await updateDoc(docRef, {
         isRunning: station.isRunning,
+        gameId: station.isRunning ? station.gameId : null,
       })
+
       console.log(`Station ${stationID} status updated in Firestore.`)
     } catch (error) {
       console.error(`Error updating station ${stationID} status:`, error)

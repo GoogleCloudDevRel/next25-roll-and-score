@@ -20,7 +20,7 @@ import { useScoreStore } from '@/store'
 
 const geminiCoach = ref(null)
 const scoreStore = useScoreStore()
-const { geminiReport } = storeToRefs(scoreStore)
+const { geminiReport, gameStarted } = storeToRefs(scoreStore)
 
 const { navigateTo } = useRouteManager()
 
@@ -38,8 +38,12 @@ defineExpose({
   },
   animateIdle: async () => {
     if (getQueryParam('manual')) return
-    await new Promise((resolve) => setTimeout(resolve, geminiReport.value.length * 50))
-    navigateTo('score')
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.min(geminiReport.value.length * 50, 1000)),
+    )
+    if (gameStarted.value) {
+      navigateTo('score')
+    }
   },
 })
 </script>

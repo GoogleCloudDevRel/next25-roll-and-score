@@ -9,3 +9,21 @@ export function deferred() {
   promise.reject = temp_reject;
   return promise;
 }
+
+export function waitFor(cb) {
+  const promise = deferred()
+  let maxTime = 2000
+  let count = 0
+  let interval = setInterval(() => {
+    if (cb()) {
+      promise.resolve()
+      clearInterval(interval)
+    }
+    count++
+    if (count > maxTime) {
+      promise.reject()
+      clearInterval(interval)
+    }
+  }, 120)
+  return promise
+}

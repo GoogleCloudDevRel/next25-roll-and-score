@@ -27,41 +27,40 @@ import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { getQueryParam } from '@/utils/get-query-param'
 import VText from '@/components/VText.vue'
-
+import { waitFor } from '@/utils/deferred'
 const scoreBoard = ref(null)
 const progress = ref(null)
 const heading = ref(null)
 
-const { navigateTo } = useRouteManager()
+const { navigateTo, isTransitioning } = useRouteManager()
 
 const store = useScoreStore()
 
-const { score, maxTries, tries, triesPerStep } = storeToRefs(store)
+const { score, maxTries, tries, step, gameStarted, maxSteps } = storeToRefs(store)
 
-watch(
-  () => tries.value,
-  async (value) => {
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    if (value % triesPerStep.value === 0) {
-      navigateTo(value === maxTries.value ? 'final' : 'replay')
-    }
-  },
-)
+watch(step, async (value) => {
+  if (value && gameStarted.value) {
+    await Promise.all([
+      waitFor(() => !isTransitioning.value),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ])
+    navigateTo(value === maxSteps.value ? 'final' : 'replay')
+  }
+})
 
 defineExpose({
-  animateSet: async () => {
+  animateSet: async (to, from) => {
     await heading.value.prepare()
     await scoreBoard.value.animateSet()
-    if (score.value === 0) {
+    if (score.value === 0 || from.id === 'intro') {
       await progress.value.animateSet()
     }
   },
-  animateIn: async () => {
+  animateIn: async (to, from) => {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     await scoreBoard.value.animateIn()
     heading.value.animateIn()
-    if (score.value === 0) {
+    if (score.value === 0 || from.id === 'intro') {
       await progress.value.animateIn()
     }
   },

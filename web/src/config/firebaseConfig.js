@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Initialize Firebase Configuration
@@ -11,9 +11,21 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
-  
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app, "roll-and-score");
 
-export { auth, db, onAuthStateChanged }
+async function signIn() {
+  try {
+    await signInWithEmailAndPassword(auth,
+      import.meta.env.VITE_FIREBASE_USER_EMAIL,
+      import.meta.env.VITE_FIREBASE_USER_PASSWORD
+    )
+    console.log("Authenticated");
+  } catch (error) {
+    console.error("Error authenticating:", error);
+  }
+}
+
+export { auth, db, signIn }

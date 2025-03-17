@@ -71,8 +71,25 @@ import VText from './VText.vue'
 import { gsap } from '@/utils/gsap'
 import BackgroundBase from './background/BackgroundBase.vue'
 import BackgroundRings from './background/BackgroundRings.vue'
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/config/firebaseConfig'
+import { doc, updateDoc, onSnapshot, collection, addDoc, query, orderBy } from 'firebase/firestore'
+import { db, signIn } from '@/config/firebaseConfig'
+import VTable from './VTable.vue'
+
+const tableHeaders = [
+  { key: 'stationID', label: 'Station ID' },
+  { key: 'startTime', label: 'Start Time' },
+  { key: 'endTime', label: 'End Time' },
+  { key: 'gameStatus', label: 'Game Status' },
+  { key: 'analysisURL', label: 'View Analysis' },
+]
+
+const tableData = ref([])
+
+const formatters = {
+  analysisURL: (value) => {
+    return value ? `<a href="${value}" target="_blank">View Analysis</a>` : ''
+  },
+}
 
 // ===================================================
 // Controllers
@@ -82,23 +99,47 @@ const gameStations = reactive([
   {
     stationID: '01',
     isRunning: false,
+    gameId: null,
   },
   {
     stationID: '02',
     isRunning: false,
+    gameId: null,
   },
 ])
 const unsubscribeListeners = {} // Store unsubscribe functions
 
-onMounted(() => {
+onMounted(async () => {
   blocks.value = Array.from(dashboard.value.querySelectorAll('.block'))
+  await signIn()
   setupListeners()
+  setupTableData()
 })
 
 onUnmounted(() => {
   // Unsubscribe all listeners when the component is unmounted
   Object.values(unsubscribeListeners).forEach((unsubscribe) => unsubscribe())
 })
+
+const setupTableData = () => {
+  const gamesCollection = collection(db, 'games')
+  const q = query(gamesCollection, orderBy('startTime', 'desc'))
+  unsubscribeListeners['games'] = onSnapshot(q, (snapshot) => {
+    tableData.value = snapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        stationID: data.stationId,
+        startTime: data.startTime.toDate().toLocaleTimeString(),
+        endTime: data.endTime ? data.endTime.toDate().toLocaleTimeString() : null,
+        gameStatus: data.gameStatus,
+        analysisURL:
+          data.gameStatus === 'cancelled' || data.gameStatus === 'playing'
+            ? null
+            : 'https://www.google.com',
+      }
+    })
+  })
+}
 
 const setupListeners = () => {
   const stationIDs = ['01', '02']
@@ -112,10 +153,12 @@ const setupListeners = () => {
           const existingStation = gameStations.find((s) => s.stationID === stationID)
           if (existingStation) {
             existingStation.isRunning = data.isRunning || false
+            existingStation.gameId = data.gameId || null
           } else {
             gameStations.push({
               stationID: stationID,
               isRunning: data.isRunning || false,
+              gameId: data.gameId || null,
             })
           }
         } else {
@@ -124,6 +167,7 @@ const setupListeners = () => {
           gameStations.push({
             stationID: stationID,
             isRunning: false,
+            gameId: null,
           })
         }
       },
@@ -139,156 +183,37 @@ const toggleStatus = async (stationID) => {
   if (station) {
     station.isRunning = !station.isRunning
     try {
+      const gamesCollection = collection(db, 'games')
+      if (station.isRunning) {
+        const newGame = await addDoc(gamesCollection, {
+          endTime: null,
+          startTime: new Date(),
+          gameStatus: 'playing',
+          stationId: `station${stationID}`,
+          scores: [],
+          totalScore: 0,
+        })
+        station.gameId = newGame.id
+      } else {
+        const gameRef = doc(gamesCollection, station.gameId)
+        await updateDoc(gameRef, {
+          endTime: new Date(),
+          gameStatus: 'cancelled',
+        })
+      }
+
       const docRef = doc(db, 'gameStations', `station${stationID}`)
       await updateDoc(docRef, {
         isRunning: station.isRunning,
+        gameId: station.isRunning ? station.gameId : null,
       })
+
       console.log(`Station ${stationID} status updated in Firestore.`)
     } catch (error) {
       console.error(`Error updating station ${stationID} status:`, error)
       station.isRunning = !station.isRunning
     }
   }
-}
-
-// ===================================================
-// VTable
-// ===================================================
-
-import VTable from './VTable.vue' // Adjust the path
-
-const tableHeaders = [
-  { key: 'stationID', label: 'Station ID' },
-  { key: 'startTime', label: 'Start Time' },
-  { key: 'endTime', label: 'End Time' },
-  { key: 'analysisURL', label: 'View Analysis' },
-]
-
-const tableData = [
-  {
-    stationID: 'Station 01',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 01',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 01',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 01',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 01',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 01',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 01',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-  {
-    stationID: 'Station 02',
-    startTime: '10:00 AM',
-    endTime: '11:30 AM',
-    analysisURL: 'https://example.com/analysis',
-  },
-]
-
-const formatters = {
-  date: (value) => new Date(value).toLocaleDateString(),
 }
 
 // ===================================================

@@ -1,6 +1,6 @@
 <template>
   <BackgroundBase
-    :dpr="1.5"
+    :dpr="1"
     v-slot="{ oglState }"
   >
     <BackgroundRings :oglState="oglState" />

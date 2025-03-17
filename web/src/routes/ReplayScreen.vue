@@ -44,7 +44,7 @@ const video = ref(null)
 const wrapper = ref(null)
 const badge = ref(null)
 
-const { replayVideo } = storeToRefs(useScoreStore())
+const { replayVideo, gameStarted } = storeToRefs(useScoreStore())
 
 const { navigateTo } = useRouteManager()
 
@@ -102,7 +102,9 @@ defineExpose({
       new Promise((resolve) => (video.value.onended = () => resolve())),
       new Promise((resolve) => setTimeout(resolve, 5000)),
     ])
-    navigateTo('report')
+    if (gameStarted.value) {
+      navigateTo('report')
+    }
   },
 })
 </script>

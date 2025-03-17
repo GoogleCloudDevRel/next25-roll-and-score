@@ -18,17 +18,14 @@
         <td
           v-for="header in headers"
           :key="header.key"
-        >
-          {{ formatValue(item, header) }}
-        </td>
+          v-html="formatValue(item, header)"
+        />
       </tr>
     </tbody>
   </table>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
 const props = defineProps({
   headers: {
     type: Array,
