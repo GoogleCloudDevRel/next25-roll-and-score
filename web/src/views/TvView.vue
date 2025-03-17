@@ -31,7 +31,6 @@ import ReportScreen from '../routes/ReportScreen.vue'
 import FinalScreen from '../routes/FinalScreen.vue'
 import { getQueryParam } from '@/utils/get-query-param'
 import { useScoreStore } from '@/store'
-
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
 
@@ -45,16 +44,23 @@ const routes = {
   final: FinalScreen,
 }
 
-const {
-  registerRoutes,
-  navigateTo,
-  isTransitioning,
-  // Optional: Use this to customize how routes change behave
-  // onRouteChange,
-} = useRouteManager()
+const { registerRoutes, navigateTo, isTransitioning } = useRouteManager()
 
 let index = 0
-const navigationFlow = ['intro', 'welcome', 'start', 'score', 'replay', 'report', 'score', 'final']
+const navigationFlow = [
+  'intro',
+  'welcome',
+  'start',
+  'score',
+  'replay',
+  'report',
+  'score',
+  'replay',
+  'report',
+  'score',
+  'final',
+]
+
 function handleClick(e) {
   e.preventDefault()
   if (isTransitioning.value) return

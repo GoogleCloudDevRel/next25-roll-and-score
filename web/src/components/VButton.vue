@@ -108,7 +108,7 @@ defineExpose({
   },
   animateIn: (delay = 0) => {
     gsap.to(el.value, {
-      clipPath: 'inset(-5% round 50px)',
+      clipPath: 'inset(-10% round 50px)',
       duration: 1,
       ease: 'power2.inOut',
       delay,
