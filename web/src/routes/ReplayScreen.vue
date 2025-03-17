@@ -18,7 +18,7 @@
         ref="wrapper"
       >
         <video
-          src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          :src="replayVideo"
           muted
           class="video"
           ref="video"
@@ -37,10 +37,14 @@ import { getQueryParam } from '@/utils/get-query-param'
 import VBadge from '@/components/VBadge.vue'
 import VText from '@/components/VText.vue'
 import VProgress from '@/components/VProgress.vue'
+import { useScoreStore } from '@/store'
+import { storeToRefs } from 'pinia'
 
 const video = ref(null)
 const wrapper = ref(null)
 const badge = ref(null)
+
+const { replayVideo } = storeToRefs(useScoreStore())
 
 const { navigateTo } = useRouteManager()
 

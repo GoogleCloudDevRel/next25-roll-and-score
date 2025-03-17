@@ -23,7 +23,7 @@
     >
       <div
         class="block score"
-        ref="blocks"
+        :ref="setBlocks"
       >
         <VText
           ref="scoreText"
@@ -41,7 +41,7 @@
       </div>
       <div
         class="block stats"
-        ref="blocks"
+        :ref="setBlocks"
       >
         <VText
           ref="statsText"
@@ -50,7 +50,7 @@
         />
         <div class="qr">
           <img
-            src="/images/qr.png"
+            :src="qr"
             alt="stats"
           />
         </div>
@@ -58,7 +58,7 @@
       </div>
       <div
         class="block video-replay"
-        ref="blocks"
+        :ref="setBlocks"
       >
         <video
           src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
@@ -82,6 +82,7 @@ import VText from './VText.vue'
 import { gsap } from '@/utils/gsap'
 import BackgroundBase from './background/BackgroundBase.vue'
 import BackgroundRings from './background/BackgroundRings.vue'
+import { generateQR } from '@/utils/qr'
 
 const dashboard = ref()
 const scoreBoard = ref()
@@ -89,6 +90,11 @@ const scoreText = ref()
 const statsText = ref()
 const btn = ref()
 const blocks = ref([])
+const qr = ref()
+
+const setBlocks = (el) => {
+  blocks.value.push(el)
+}
 
 const props = defineProps({
   score: {
@@ -97,8 +103,10 @@ const props = defineProps({
   },
 })
 
-onMounted(() => {
-  blocks.value = Array.from(dashboard.value.querySelectorAll('.block'))
+onMounted(async () => {
+  qr.value = await generateQR(
+    window.location.origin + '#/phone?id=' + Math.random().toString(36).substring(2, 15),
+  )
 })
 
 async function animateSet() {
@@ -231,7 +239,7 @@ defineExpose({
   box-shadow:
     0 0 0 2px #000,
     3px 4px 0 0 #000;
-  padding: px-to-vw(2);
+  padding: px-to-vw(16);
 
   img {
     width: 100%;

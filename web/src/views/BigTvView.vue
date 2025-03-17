@@ -13,6 +13,7 @@
       :key="route.__name"
     />
   </div>
+  <QRCode :value="'https://www.google.com'" />
 </template>
 
 <script setup>
@@ -23,6 +24,7 @@ import RollAndScoreIntro from '@/components/RollAndScoreIntro.vue'
 import { useRouteManager } from '@/router/useRouteManager'
 import { nextTick, onMounted, onUnmounted, shallowRef } from 'vue'
 import { getQueryParam } from '@/utils/get-query-param'
+import QRCode from '@/components/QRCode.vue'
 
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
