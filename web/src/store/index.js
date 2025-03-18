@@ -1,6 +1,6 @@
 import { getQueryParam } from "@/utils/get-query-param";
 import { defineStore } from "pinia";
-import { db, signIn } from '@/config/firebaseConfig';
+import { db } from '@/config/firebaseConfig';
 import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, getDoc, getDocs } from "firebase/firestore";
 
 export const saveEndGame = async () => {
@@ -194,7 +194,6 @@ export const useHightlightsStore = defineStore('highlights', {
   }),
   actions: {
     async fetchTopScores() {
-      await signIn()
       const scoresCollection = collection(db, 'games');
       const q = query(scoresCollection, orderBy('totalScore', 'desc'), limit(5));
 
@@ -232,7 +231,6 @@ export const useMobileScoreStore = defineStore('mobileScore', {
   }),
   actions: {
     async setData() {
-      await signIn()
       const gameId = getQueryParam('gameId', false)
       const scoresCollection = collection(db, 'games')
       const allGames = await getDocs(scoresCollection)
