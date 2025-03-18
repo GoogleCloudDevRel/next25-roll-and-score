@@ -258,7 +258,6 @@ export const useChromebookStore = defineStore('chromebook', {
   }),
   actions: {
     async setData() {
-      await signIn()
       const gameId = getQueryParam('gameId', false)
       const scoresCollection = doc(collection(db, 'games'), gameId)
       const game = await getDoc(scoresCollection)
