@@ -1,10 +1,30 @@
 #!/bin/bash
 
+# Prompt the user for the environment (dev/prod)
+while true; do
+    read -p "Run in (dev/prod)? " environment
+    case "$environment" in
+        [Dd][Ee][Vv]) environment="dev"; break ;;
+        [Pp][Rr][Oo][Dd]) environment="prod"; break ;;
+        *) echo "Invalid input. Please enter 'dev' or 'prod'." ;;
+    esac
+done
+
+echo "Starting deployment task to ${environment}..."
+
+set -e
+
+# Copy actual values to config file
+firebase_config="/src/config/firebaseConfig.js"
+prod_firebase_config="/src/config/firebaseConfigProd.js"
+
+cp "$prod_firebase_config" "$firebase_config"
+
 # Configuration
 PROJECT_ID="next-25-roll-and-score"
 REGION="us-central1"
-SERVICE_NAME="roll-and-score"
-IMAGE_NAME="vue-front-end-image"
+SERVICE_NAME="${environment}-roll-and-score"
+IMAGE_NAME="${environment}-vue-front-end-image"
 REPOSITORY="roll-and-score-artifact-repo"
 
 # Build the Docker image
@@ -27,13 +47,12 @@ docker push "$REGION"-docker.pkg.dev/"$PROJECT_ID"/"$REPOSITORY"/"$IMAGE_NAME"
 echo "Deploying to Cloud Run..."
 gcloud run deploy "$SERVICE_NAME" \
     --image "$REGION"-docker.pkg.dev/"$PROJECT_ID"/"$REPOSITORY"/"$IMAGE_NAME" \
-    --platform managed \
     --region "$REGION" \
-    --allow-unauthenticated \
-    --service-account="front-end-service-account@next-25-roll-and-score.iam.gserviceaccount.com"
+    --service-account="front-end-service-account@next-25-roll-and-score.iam.gserviceaccount.com" \
+    --platform managed \
+    --allow-unauthenticated
 
-echo "Deployment task is done!"
+echo "Deployment task is finished!"
 
-# Optionally, print the service URL
-echo "Service URL:"
-gcloud run services describe "$SERVICE_NAME" --platform managed --region="$REGION" --format='value(status.url)'
+# Restore firebaseConfig.js file
+git restore "$firebase_config"
