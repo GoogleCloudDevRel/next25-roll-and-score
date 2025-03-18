@@ -1,5 +1,8 @@
 <template>
-  <div class="mobileScoreCard">
+  <div
+    class="mobileScoreCard"
+    ref="mobileScoreCard"
+  >
     <div class="wrapper">
       <div class="heading">
         <VText
@@ -130,6 +133,7 @@ import VButton from '@/components/VButton.vue'
 import { onMounted, ref } from 'vue'
 import gsap from 'gsap'
 
+const mobileScoreCard = ref(null)
 const backing = ref(null)
 const videoWrapper = ref(null)
 const descriptionWrapper = ref(null)
@@ -169,6 +173,9 @@ const heading = ref(null)
 
 onMounted(async () => {
   window.scrollTo(0, 0)
+  gsap.set(mobileScoreCard.value, {
+    opacity: 0,
+  })
 })
 
 const backings = [backing, videoWrapper, descriptionWrapper]
@@ -191,6 +198,10 @@ const animateSet = async () => {
 
   gsap.set(button.value, {
     scale: 0,
+  })
+
+  gsap.set(mobileScoreCard.value, {
+    opacity: 1,
   })
 }
 

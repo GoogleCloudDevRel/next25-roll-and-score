@@ -1,25 +1,27 @@
 <template>
   <RollAndScoreFinal
     ref="rollAndScoreFinal"
-    :score="score"
+    :score="finalScore"
+    :gameId="gameId"
+    :videoSrc="videoSrc"
   />
 </template>
 
 <script setup>
 import RollAndScoreFinal from '@/components/RollAndScoreFinal.vue'
 import { onMounted, shallowRef } from 'vue'
-import { useScoreStore } from '@/store'
+import { useChromebookStore } from '@/store'
 import { storeToRefs } from 'pinia'
 const rollAndScoreFinal = shallowRef(null)
 
-// fetch score
-const scoreStore = useScoreStore()
+const chromebookStore = useChromebookStore()
 
-scoreStore.setScore(1234)
+const { finalScore, gameId, videoSrc } = storeToRefs(chromebookStore)
 
-const { score } = storeToRefs(scoreStore)
+const promise = chromebookStore.setData()
 
 onMounted(async () => {
+  await promise
   await rollAndScoreFinal.value.animateSet()
   rollAndScoreFinal.value.animateIn()
 })

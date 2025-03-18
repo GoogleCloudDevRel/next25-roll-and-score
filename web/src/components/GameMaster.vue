@@ -27,37 +27,36 @@
         :class="'block station' + station.stationID"
         ref="blocks"
       >
-        <VText
-          :text="'Station ' + station.stationID"
-          variant="bold-48"
-        />
-        <VButton
-          textVariant="bold-24"
-          :text="station.isRunning ? 'Running' : 'Start Game'"
-          :backgroundColor="station.isRunning ? 'red' : 'blue'"
-          :disabled="station.isRunning"
-          @click="toggleStatus(station.stationID)"
-        />
-        <VButton
-          textVariant="bold-24"
-          text="Reset Game"
-          :backgroundColor="station.isRunning ? 'red' : 'grey'"
-          :disabled="!station.isRunning"
-          @click="toggleStatus(station.stationID)"
-        />
-        <div></div>
-        <div></div>
-      </div>
-      <div
-        class="block video-replay"
-        ref="blocks"
-      >
-        <VTable
-          :headers="tableHeaders"
-          :items="tableData"
-          :formatters="formatters"
-          primaryKey="userId"
-        />
+        <div class="station-header">
+          <VText
+            :text="'Station ' + station.stationID"
+            variant="bold-48"
+          />
+          <div class="station-header-buttons">
+            <VButton
+              textVariant="bold-24"
+              :text="station.isRunning ? 'Running' : 'Start Game'"
+              :backgroundColor="station.isRunning ? 'grey' : 'green'"
+              :disabled="station.isRunning"
+              @click="toggleStatus(station.stationID)"
+            />
+            <VButton
+              textVariant="bold-24"
+              text="Cancel Game"
+              :backgroundColor="station.isRunning ? 'red' : 'grey'"
+              :disabled="!station.isRunning"
+              @click="toggleStatus(station.stationID)"
+            />
+          </div>
+        </div>
+        <div class="station-table">
+          <VTable
+            :headers="tableHeaders"
+            :items="station.tableData"
+            :formatters="formatters"
+            primaryKey="userId"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -74,20 +73,19 @@ import BackgroundRings from './background/BackgroundRings.vue'
 import { doc, updateDoc, onSnapshot, collection, addDoc, query, orderBy } from 'firebase/firestore'
 import { db, signIn } from '@/config/firebaseConfig'
 import VTable from './VTable.vue'
+import { waitFor } from '@/utils/deferred'
 
 const tableHeaders = [
-  { key: 'stationID', label: 'Station ID' },
+  // { key: 'stationID', label: 'Station ID' },
   { key: 'startTime', label: 'Start Time' },
   { key: 'endTime', label: 'End Time' },
-  { key: 'gameStatus', label: 'Game Status' },
+  // { key: 'gameStatus', label: 'Game Status' },
   { key: 'analysisURL', label: 'View Analysis' },
 ]
 
-const tableData = ref([])
-
 const formatters = {
   analysisURL: (value) => {
-    return value ? `<a href="${value}" target="_blank">View Analysis</a>` : ''
+    return value ? `<a class="button" href="${value}" target="_blank">View Analysis</a>` : ''
   },
 }
 
@@ -100,11 +98,13 @@ const gameStations = reactive([
     stationID: '01',
     isRunning: false,
     gameId: null,
+    tableData: [],
   },
   {
     stationID: '02',
     isRunning: false,
     gameId: null,
+    tableData: [],
   },
 ])
 const unsubscribeListeners = {} // Store unsubscribe functions
@@ -125,17 +125,25 @@ const setupTableData = () => {
   const gamesCollection = collection(db, 'games')
   const q = query(gamesCollection, orderBy('startTime', 'desc'))
   unsubscribeListeners['games'] = onSnapshot(q, (snapshot) => {
-    tableData.value = snapshot.docs.map((doc) => {
+    gameStations.forEach((station) => {
+      station.tableData = []
+    })
+    snapshot.docs.forEach((doc) => {
       const data = doc.data()
-      return {
-        stationID: data.stationId,
-        startTime: data.startTime.toDate().toLocaleTimeString(),
-        endTime: data.endTime ? data.endTime.toDate().toLocaleTimeString() : null,
-        gameStatus: data.gameStatus,
-        analysisURL:
-          data.gameStatus === 'cancelled' || data.gameStatus === 'playing'
-            ? null
-            : 'https://www.google.com',
+      if (data.gameStatus === 'cancelled') return
+      const stationID = data.stationId
+      const existingStation = gameStations.find((s) => `station${s.stationID}` === stationID)
+      if (existingStation) {
+        existingStation.tableData.push({
+          stationID: data.stationId,
+          startTime: data.startTime.toDate().toLocaleTimeString(),
+          endTime: data.endTime ? data.endTime.toDate().toLocaleTimeString() : null,
+          gameStatus: data.gameStatus,
+          analysisURL:
+            data.gameStatus === 'cancelled' || data.gameStatus === 'playing'
+              ? null
+              : `${window.location.origin}/?gameId=${doc.id}#/chromebook`,
+        })
       }
     })
   })
@@ -235,6 +243,7 @@ async function animateSet() {
 }
 
 async function animateIn() {
+  await waitFor(() => gameStations.some((s) => s.tableData.length > 0))
   gsap.to(blocks.value, {
     clipPath: 'inset(-5% round 25px)',
     duration: 1.2,
@@ -275,12 +284,13 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   padding: 0 px-to-vw(48) px-to-vw(48);
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
+  height: 100%;
+  overflow: hidden; /* Prevent overall page scrolling */
 }
 
 .header {
@@ -297,17 +307,10 @@ defineExpose({
 
 .dashboard {
   display: grid;
-  grid-template-columns: px-to-vw(440) 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: px-to-vw(18);
   width: 100%;
-  flex: 1;
-  max-height: px-to-vw(880);
-
-  .VButton {
-    width: 100%;
-    height: 25%;
-  }
+  height: calc(100vh - 150px);
 }
 
 .block {
@@ -322,48 +325,93 @@ defineExpose({
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
   overflow: hidden;
+  height: auto;
+  max-height: 100%;
 }
 
 .station01 {
-  background: $brandGreen;
+  --station-color: #{$brandBlue};
+  background: var(--station-color);
 }
 
 .station02 {
-  background: $brandYellow;
+  --station-color: #{$brandYellow};
+  background: var(--station-color);
 }
 
-.video-replay {
-  grid-column: 2 / 3;
-  grid-row: 1 / 3;
+.station-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: px-to-vw(26) 0;
+  flex-shrink: 0;
+}
 
-  video {
-    position: absolute;
-    top: -1%;
-    left: -1%;
-    width: 102%;
-    height: 102%;
-    object-fit: cover;
+.station-header-buttons {
+  display: flex;
+  gap: px-to-vw(18);
+}
+
+.station-table {
+  width: 100%;
+  flex: 1; /* Take up remaining space */
+  overflow-y: auto; /* Enable vertical scrolling */
+  margin-top: 15px; /* Add some spacing from the header */
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Important for nested flex scrolling to work */
+
+  /* style scrollbar */
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--station-color);
+    border-radius: 5px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #fff;
+    border-radius: 10px;
+    border: 3px solid var(--station-color);
   }
 }
 
-.qr {
-  width: px-to-vw(200);
-  height: px-to-vw(200);
+.station-table :deep(.v-table) {
+  width: 100%;
+  table-layout: fixed;
+  margin-bottom: 10px;
+}
+
+.station-table :deep(.v-table th),
+.station-table :deep(.v-table td) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+}
+
+.station-table :deep(.button) {
+  background: $brandGreen;
+  color: #fff;
+  border-radius: 999px;
+  text-decoration: none;
+  text-shadow: px-to-vw(2) px-to-vw(3) 0 #000;
+  -webkit-text-stroke: px-to-vw(4);
+  -webkit-text-stroke-color: #000;
+  box-shadow: px-to-vw(2) px-to-vw(3) 0 #000;
+  border: px-to-vw(2) solid #000;
+  height: min(px-to-vh(57), 57px);
+  width: max-content;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: px-to-vw(20);
-  background: #fff;
-  box-shadow:
-    0 0 0 2px #000,
-    3px 4px 0 0 #000;
-  padding: px-to-vw(2);
+  padding: 0 24px;
 
-  img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
+  &:hover {
+    box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 1);
+    transform: translateX(1px) translateY(3px);
   }
 }
 </style>

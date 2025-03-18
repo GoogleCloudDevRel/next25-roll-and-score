@@ -1,14 +1,10 @@
 <template>
-  <GameMaster
-    ref="gameMaster"
-  />
+  <GameMaster ref="gameMaster" />
 </template>
 
 <script setup>
 import GameMaster from '@/components/GameMaster.vue'
 import { onMounted, shallowRef } from 'vue'
-import { useScoreStore } from '@/store'
-import { storeToRefs } from 'pinia'
 
 const gameMaster = shallowRef(null)
 

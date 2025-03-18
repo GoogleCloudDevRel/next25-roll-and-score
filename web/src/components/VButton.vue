@@ -140,13 +140,13 @@ defineExpose({
   cursor: pointer;
 
   &.default {
-    height: min(px-to-vh(54), 54px);
+    height: min(px-to-vh(57), 57px);
     padding: 0 24px;
   }
 
   &.icon {
-    height: min(px-to-vh(54), 54px);
-    width: min(px-to-vh(54), 54px);
+    height: min(px-to-vh(57), 57px);
+    width: min(px-to-vh(57), 57px);
     padding: 0;
   }
 

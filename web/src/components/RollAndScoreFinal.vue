@@ -8,7 +8,10 @@
       :grayscale="true"
     />
   </BackgroundBase>
-  <div class="wrapper">
+  <div
+    class="wrapper"
+    ref="wrapper"
+  >
     <div class="header">
       <IconGoogle class="logo" />
       <VButton
@@ -61,7 +64,7 @@
         :ref="setBlocks"
       >
         <video
-          src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          :src="videoSrc"
           autoplay
           loop
           muted
@@ -74,7 +77,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import IconGoogle from './icons/IconGoogle.vue'
 import ScoreBoard from './ScoreBoard.vue'
 import VButton from './VButton.vue'
@@ -84,6 +87,7 @@ import BackgroundBase from './background/BackgroundBase.vue'
 import BackgroundRings from './background/BackgroundRings.vue'
 import { generateQR } from '@/utils/qr'
 
+const wrapper = ref()
 const dashboard = ref()
 const scoreBoard = ref()
 const scoreText = ref()
@@ -101,13 +105,28 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  gameId: {
+    type: String,
+    default: '',
+  },
+  videoSrc: {
+    type: String,
+    default: '',
+  },
 })
 
 onMounted(async () => {
-  qr.value = await generateQR(
-    window.location.origin + '#/phone?id=' + Math.random().toString(36).substring(2, 15),
-  )
+  gsap.set(wrapper.value, {
+    opacity: 0,
+  })
 })
+
+watch(
+  () => props.gameId,
+  async () => {
+    qr.value = await generateQR(`${window.location.origin}?gameId=${props.gameId}#/phone`)
+  },
+)
 
 async function animateSet() {
   gsap.set(blocks.value, {
@@ -117,6 +136,9 @@ async function animateSet() {
   await scoreText.value.prepare()
   await statsText.value.prepare()
   scoreBoard.value.animateSet()
+  gsap.set(wrapper.value, {
+    opacity: 1,
+  })
 }
 
 async function animateIn() {

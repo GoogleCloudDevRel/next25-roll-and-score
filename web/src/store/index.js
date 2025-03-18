@@ -253,6 +253,28 @@ export const useMobileScoreStore = defineStore('mobileScore', {
   }
 })
 
+export const useChromebookStore = defineStore('chromebook', {
+  state: () => ({
+    finalScore: 0,
+    gameId: null,
+    videoSrc: '',
+  }),
+  actions: {
+    async setData() {
+      await signIn()
+      const gameId = getQueryParam('gameId', false)
+      const scoresCollection = doc(collection(db, 'games'), gameId)
+      const game = await getDoc(scoresCollection)
+      const gameData = game.data()
+
+      this.finalScore = gameData.totalScore
+      this.gameId = gameId
+      // TBD:
+      this.videoSrc = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+    }
+  }
+})
+
 window.setScore = (score) => {
   useScoreStore().setScore(score)
 }

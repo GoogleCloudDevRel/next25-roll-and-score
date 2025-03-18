@@ -22,8 +22,10 @@ const mobileScoreStore = useMobileScoreStore()
 
 const { leaderboard, finalScore, data, description, videoSrc } = storeToRefs(mobileScoreStore)
 
+const promise = mobileScoreStore.setData()
+
 onMounted(async () => {
-  await mobileScoreStore.setData()
+  await promise
   await mobileScoreCard.value.animateSet()
 
   mobileScoreCard.value.animateIn()
