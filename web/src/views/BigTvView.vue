@@ -57,13 +57,22 @@ onMounted(async () => {
 
   await nextTick()
 
-  const initialView = Object.keys(routes).find((key) => getQueryParam('view', false) === key)
-  index = Object.keys(routes).indexOf(initialView)
-  index = index === -1 ? 0 : index
+  if (getQueryParam('loop')) {
+    let loopIndex = 0
+    navigateTo('intro')
+    setInterval(() => {
+      loopIndex = loopIndex === Object.keys(routes).length - 1 ? 0 : loopIndex + 1
+      navigateTo(Object.keys(routes)[loopIndex])
+    }, 15000)
+  } else {
+    const initialView = Object.keys(routes).find((key) => getQueryParam('view', false) === key)
+    index = Object.keys(routes).indexOf(initialView)
+    index = index === -1 ? 0 : index
 
-  navigateTo(initialView ?? 'intro')
+    navigateTo(initialView ?? 'intro')
 
-  document.body.addEventListener('click', handleClick)
+    document.body.addEventListener('click', handleClick)
+  }
 })
 
 onUnmounted(() => {

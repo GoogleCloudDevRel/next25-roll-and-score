@@ -123,7 +123,7 @@ import { ref } from 'vue'
 import VText from '@/components/VText.vue'
 import Scoreboard from '@/components/ScoreBoard.vue'
 import LeaderboardBacking from '@/components/leaderboard/LeaderboardBacking.vue'
-import { gsap } from '@/utils/gsap'
+
 const rankNumbers = ref([])
 const scoreNumbers = ref([])
 
@@ -188,7 +188,10 @@ const animateIn = async () => {
 }
 
 const animateOut = () => {
-  heading.value.animateOut()
+  backing.value.animateOut()
+  setTimeout(() => {
+    heading.value.animateOut()
+  }, 100)
   scoreNumbers.value.forEach((number) => {
     number.animateOut()
   })

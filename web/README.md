@@ -44,3 +44,4 @@ npm run lint
   - `?rank` to simulate the celebratory moment on tv screen
   - `?device` to adjust UI based on which station/device you're on
   - `?autoScore` to simulate a gameplay
+  - `?loop` to ping/pong between intro and highlights each 15 seconds

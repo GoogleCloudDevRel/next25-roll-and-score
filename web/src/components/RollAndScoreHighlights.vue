@@ -66,7 +66,8 @@ async function animateIn() {
   ])
 }
 async function animateOut() {
-  await leaderboard.value.animateOn()
+  gsap.to(videoBlock.value, { scale: 0, duration: 1, ease: 'power2.out' })
+  await leaderboard.value.animateOut()
 }
 
 defineExpose({
