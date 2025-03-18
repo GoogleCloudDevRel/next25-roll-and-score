@@ -3,7 +3,7 @@
     <GeminiCoach
       ref="geminiCoach"
       :show-badge="false"
-      text="Roll the ball to start!"
+      :text="copy.startText"
       :bg-color="colors.brandYellow"
       :immediate="false"
     />
@@ -18,7 +18,7 @@ import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
 import { useScoreStore } from '@/store'
 import { storeToRefs } from 'pinia'
-
+import copy from '@/copy.json'
 const geminiCoach = ref(null)
 
 const { navigateTo } = useRouteManager()

@@ -2,7 +2,7 @@
   <div class="center">
     <GeminiCoach
       ref="geminiCoach"
-      :text="text"
+      :text="copy.welcomeText"
       :immediate="false"
     />
   </div>
@@ -15,14 +15,7 @@ import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
 import { useScoreStore } from '@/store'
 import { storeToRefs } from 'pinia'
-
-const props = defineProps({
-  text: {
-    type: String,
-    default:
-      'Welcome! Are you ready to experience Gemini 2.0’s real-time guidance, and see how AI can elevate your game?',
-  },
-})
+import copy from '@/copy.json'
 
 const geminiCoach = ref(null)
 
@@ -43,7 +36,7 @@ defineExpose({
   },
   animateIdle: async () => {
     if (getQueryParam('manual')) return
-    await new Promise((resolve) => setTimeout(resolve, props.text.length * 50))
+    await new Promise((resolve) => setTimeout(resolve, copy.welcomeText.length * 50))
     if (gameStarted.value) {
       navigateTo('start')
     }

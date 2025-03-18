@@ -42,11 +42,11 @@ const store = useHightlightsStore()
 const scoreStore = useScoreStore()
 
 onMounted(() => {
-  store.fetchTopScores();
-});
+  store.fetchTopScores()
+})
 
 onUnmounted(() => {
-  store.stopFetchingTopScores();
+  store.stopFetchingTopScores()
 })
 
 const { score1, score2, score3, score4, score5, video: videoUrl } = storeToRefs(store)
@@ -91,6 +91,10 @@ defineExpose({
       grid-column-end: 3;
       grid-row-start: 1;
       grid-row-end: 2;
+    }
+
+    .highlights {
+      grid-template-columns: 1fr auto;
     }
   }
 }

@@ -1,0 +1,9 @@
+{
+  "introPre": "AI POWERED",
+  "introSub": "Elevate your game with Gemini 2.0",
+  "introTitle": "Roll & Score",
+  "welcomeText": "Welcome! Are you ready to experience Gemini 2.0’s real-time guidance, and see how AI can elevate your game?",
+  "startText": "Roll the ball to start!",
+  "finalTopScoreText": "Congratulations, you ranked <span class='highlight'>#${rank}</span> in today’s Roll & Score",
+  "finalText": "Great job! Visit <span class='highlight'>Chromebook ${device}</span> for your comprehensive analysis!"
+}

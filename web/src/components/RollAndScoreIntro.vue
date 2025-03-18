@@ -4,7 +4,7 @@
       ref="pre"
       class="pre"
       variant="tv-bold-96"
-      text="AI POWERED"
+      :text="copy.introPre"
     />
     <div class="sign">
       <svg
@@ -28,7 +28,7 @@
         <VText
           ref="text"
           variant="tv-bold-420"
-          text="Roll & Score"
+          :text="copy.introTitle"
           split-type="chars"
           animate-by="chars"
         />
@@ -38,7 +38,7 @@
       ref="sub"
       class="sub"
       variant="tv-bold-96"
-      text="Evolve Arcade with AI"
+      :text="copy.introSub"
     />
   </div>
 </template>
@@ -50,6 +50,8 @@ import { gsap } from '@/utils/gsap'
 import { useScoreStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { useRouteManager } from '@/router/useRouteManager'
+import copy from '@/copy.json'
+
 const svg = shallowRef(null)
 const pre = shallowRef(null)
 const text = shallowRef(null)
