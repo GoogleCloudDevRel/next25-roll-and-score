@@ -40,7 +40,10 @@ defineExpose({
   },
   animateIn: (delay = 0) => {
     gsap.to(badge.value, {
-      clipPath: `inset(${pxToVw(-16)} ${pxToVw(-11)} round ${pxToVw(45)})`,
+      clipPath:
+        window.innerWidth < 768
+          ? `inset(-3px -2px round ${pxToVw(45)})`
+          : `inset(${pxToVw(-16)} ${pxToVw(-11)} round ${pxToVw(45)})`,
       duration: 0.65,
       ease: 'power2.out',
       delay: delay + 0.2,

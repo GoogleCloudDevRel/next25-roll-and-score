@@ -69,25 +69,6 @@
             </div>
           </div>
         </VBadge>
-        <VBadge
-          variant="yellow"
-          :ref="addBadgeRef"
-        >
-          <div class="badge-inner">
-            <VText
-              variant="mobile-bold-15"
-              text="Data"
-              center
-            />
-            <div class="score-wrapper">
-              <VText
-                variant="mobile-bold-24"
-                :text="`${data}%`"
-                center
-              />
-            </div>
-          </div>
-        </VBadge>
       </div>
       <div
         class="description-wrapper"
@@ -323,7 +304,7 @@ $boxShadow: 2px 3px 0px 0px #000000;
 
   .scores-wrapper {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     width: 100%;
     gap: $gap;
     .badge {

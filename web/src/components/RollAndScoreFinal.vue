@@ -8,10 +8,7 @@
       :grayscale="true"
     />
   </BackgroundBase>
-  <div
-    class="wrapper"
-    ref="wrapper"
-  >
+  <div class="wrapper">
     <div class="header">
       <IconGoogle class="logo" />
     </div>
@@ -75,19 +72,16 @@
 import { onMounted, ref, watch } from 'vue'
 import IconGoogle from './icons/IconGoogle.vue'
 import ScoreBoard from './ScoreBoard.vue'
-import VButton from './VButton.vue'
 import VText from './VText.vue'
 import { gsap } from '@/utils/gsap'
 import BackgroundBase from './background/BackgroundBase.vue'
 import BackgroundRings from './background/BackgroundRings.vue'
 import { generateQR } from '@/utils/qr'
 
-const wrapper = ref()
 const dashboard = ref()
 const scoreBoard = ref()
 const scoreText = ref()
 const statsText = ref()
-const btn = ref()
 const blocks = ref([])
 const qr = ref()
 
@@ -111,7 +105,7 @@ const props = defineProps({
 })
 
 onMounted(async () => {
-  gsap.set(wrapper.value, {
+  gsap.set(dashboard.value, {
     opacity: 0,
   })
 })
@@ -127,11 +121,10 @@ async function animateSet() {
   gsap.set(blocks.value, {
     clipPath: 'inset(50% round 25px)',
   })
-  btn.value.animateSet()
   await scoreText.value.prepare()
   await statsText.value.prepare()
   scoreBoard.value.animateSet()
-  gsap.set(wrapper.value, {
+  gsap.set(dashboard.value, {
     opacity: 1,
   })
 }
@@ -145,7 +138,6 @@ async function animateIn() {
     onStart: () => {
       scoreText.value.animateIn(0.2)
       statsText.value.animateIn(0.3)
-      btn.value.animateIn(0.4)
       scoreBoard.value.animateIn(0.4)
     },
   })

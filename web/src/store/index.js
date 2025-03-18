@@ -241,8 +241,7 @@ export const useMobileScoreStore = defineStore('mobileScore', {
 
       this.leaderboard = leaderboardPos
       this.finalScore = game.totalScore
-      // TBD:
-      this.data = 100
+
       // TBD:
       this.description = 'This is a test description'
       // TBD:
