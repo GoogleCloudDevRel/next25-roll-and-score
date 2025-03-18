@@ -126,40 +126,15 @@ export const useScoreStore = defineStore('score', {
       if (this.tries < this.maxTries) {
         this.tries++
 
-        if(this.tries === this.maxTries) {
-          this.step++
-        }
-
         this.score = score
       }
 
-      if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
-        fetchGeminiReport()
-      }
-
-      if(this.tries === this.maxTries) {
-        this.gameStarted = false
-        this.geminiReport = null
-      }
-    },
-    addScore(score) {
-      if (this.tries < this.maxTries) {
-        this.tries++
-
-        if(this.tries === this.maxTries) {
-          this.step++
-        }
-
-        if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
+      if (this.tries % this.triesPerStep === 0) {
+        this.step++
+        console.log(this.step)
+        if (this.step < this.maxSteps) {
           fetchGeminiReport()
         }
-
-        this.score += score
-      }
-
-      if(this.tries === this.maxTries) {
-        this.gameStarted = false
-        this.geminiReport = null
       }
     },
     addScore(score) {
@@ -202,9 +177,6 @@ export const useScoreStore = defineStore('score', {
       this.replayVideo = null
       this.gameStarted = false
       this.gameId = null
-      this.device = getQueryParam('device', false) || '1'
-      this.replayVideo = null
-      this.gameStarted = false
       this.geminiReport = null
     }
   }
@@ -212,11 +184,11 @@ export const useScoreStore = defineStore('score', {
 
 export const useHightlightsStore = defineStore('highlights', {
   state: () => ({
-    score1: 600,
-    score2: 500,
-    score3: 400,
-    score4: 200,
-    score5: 100,
+    score1: 0,
+    score2: 0,
+    score3: 0,
+    score4: 0,
+    score5: 0,
     video: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     unsubscribe: null,
   }),
