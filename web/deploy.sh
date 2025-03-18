@@ -15,8 +15,8 @@ echo "Starting deployment task to ${environment}..."
 set -e
 
 # Copy actual values to config file
-firebase_config="/src/config/firebaseConfig.js"
-prod_firebase_config="/src/config/firebaseConfigProd.js"
+firebase_config="./src/config/firebaseConfig.js"
+prod_firebase_config="./src/config/firebaseConfigProd.js"
 
 cp "$prod_firebase_config" "$firebase_config"
 
@@ -50,6 +50,8 @@ gcloud run deploy "$SERVICE_NAME" \
     --region "$REGION" \
     --service-account="front-end-service-account@next-25-roll-and-score.iam.gserviceaccount.com" \
     --platform managed \
+    --cpu 4 \
+    --memory 8Gi \
     --allow-unauthenticated
 
 echo "Deployment task is finished!"
