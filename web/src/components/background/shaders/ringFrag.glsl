@@ -25,5 +25,10 @@ void main() {
     float border = mix(0.5, 0.025, uBorder);
     float alpha = aastep(0.5 - border, dist) * aastep(0.5, 1.0 - dist);
     vec3 color = mix(vec3(0.0), mix(uColor, uGrayscaleColor, uGrayscale), alpha);
+
+    if (alpha < 0.01) {
+        discard;
+    }
+
     gl_FragColor = vec4(color, alpha);
 }

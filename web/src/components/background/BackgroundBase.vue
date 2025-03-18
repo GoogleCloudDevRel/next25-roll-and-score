@@ -45,7 +45,7 @@ function cleanup() {
 function initOGL() {
   oglState.renderer = new Renderer({
     canvas: canvas.value,
-    alpha: true,
+    alpha: false,
     antialias: true,
     dpr: Math.min(props.dpr, 2) || Math.min(window.devicePixelRatio, 1),
   })

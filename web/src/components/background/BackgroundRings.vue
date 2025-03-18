@@ -102,7 +102,7 @@ onMounted(() => {
       img.src = geminiMSDF
       img.onload = () => (texture.image = img)
 
-      let texture = new Texture(gl)
+      let texture = new Texture(gl, { generateMipmaps: false })
 
       starMeshes = STAR_POSITIONS.map((_, i, { length }) => {
         const program = new Program(gl, {
