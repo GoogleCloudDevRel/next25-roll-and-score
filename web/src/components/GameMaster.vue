@@ -11,11 +11,6 @@
   <div class="wrapper">
     <div class="header">
       <IconGoogle class="logo" />
-      <VButton
-        ref="btn"
-        text="How it Works"
-        textVariant="bold-24"
-      />
     </div>
     <div
       class="dashboard"
@@ -229,17 +224,12 @@ const toggleStatus = async (stationID) => {
 // ===================================================
 
 const dashboard = ref()
-const btn = ref()
 const blocks = ref([])
 
 async function animateSet() {
   gsap.set(blocks.value, {
     clipPath: 'inset(50% round 25px)',
   })
-  btn.value.animateSet()
-  // await scoreText.value.prepare()
-  // await statsText.value.prepare()
-  // scoreBoard.value.animateSet()
 }
 
 async function animateIn() {
@@ -249,12 +239,6 @@ async function animateIn() {
     duration: 1.2,
     ease: 'power2.inOut',
     delay: 0.2,
-    onStart: () => {
-      // scoreText.value.animateIn(0.2)
-      // statsText.value.animateIn(0.3)
-      btn.value.animateIn(0.4)
-      // scoreBoard.value.animateIn(0.4)
-    },
   })
 }
 
@@ -264,10 +248,6 @@ async function animateOut() {
     duration: 1,
     stagger: 0.1,
     ease: 'power2.inOut',
-    onComplete: () => {
-      // scoreText.value.animateOut()
-      // statsText.value.animateOut()
-    },
   })
 }
 

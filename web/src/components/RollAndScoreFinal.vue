@@ -14,11 +14,6 @@
   >
     <div class="header">
       <IconGoogle class="logo" />
-      <VButton
-        ref="btn"
-        text="How it Works"
-        textVariant="bold-24"
-      />
     </div>
     <div
       class="dashboard"
