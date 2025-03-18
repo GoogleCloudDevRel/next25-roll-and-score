@@ -34,6 +34,7 @@ import { subscribeGameStarted, subscribeToScoreChanges, useScoreStore } from '@/
 import { storeToRefs } from 'pinia'
 import { signIn } from '@/config/firebaseConfig'
 
+
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
 
@@ -48,7 +49,6 @@ const routes = {
 }
 
 const { registerRoutes, navigateTo, isTransitioning } = useRouteManager()
-
 const { gameStarted } = storeToRefs(useScoreStore())
 
 watch(

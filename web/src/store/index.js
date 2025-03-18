@@ -109,6 +109,35 @@ const fetchGeminiReport = async () => {
 
 
 
+// TODO: fetch video replay
+const fetchVideoReplay = async () => {
+  try {
+    const response = await fetch('/api/video-replay');
+    const data = await response.json();
+    console.log(data)
+  } catch (error) {
+    console.error('Error fetching video replay:', error);
+  } finally {
+    useScoreStore().setVideoReplay('https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')
+  }
+}
+
+// TODO: fetch gemini report
+const fetchGeminiReport = async () => {
+  await fetchVideoReplay()
+
+  try {
+    const response = await fetch('/api/gemini-report');
+    const data = await response.json();
+    console.log(data)
+    useScoreStore().setGeminiReport(data.geminiReport);
+  } catch (error) {
+    console.error('Error fetching gemini report:', error);
+  } finally {
+    useScoreStore().setGeminiReport('This is a test report')
+  }
+}
+
 export const useScoreStore = defineStore('score', {
   state: () => ({
     score: 0,
@@ -128,15 +157,40 @@ export const useScoreStore = defineStore('score', {
       if (this.tries < this.maxTries) {
         this.tries++
 
+        if(this.tries === this.maxTries) {
+          this.step++
+        }
+
         this.score = score
       }
 
-      if (this.tries % this.triesPerStep === 0) {
-        this.step++
-        console.log(this.step)
-        if (this.step < this.maxSteps) {
+      if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
+        fetchGeminiReport()
+      }
+
+      if(this.tries === this.maxTries) {
+        this.gameStarted = false
+        this.geminiReport = null
+      }
+    },
+    addScore(score) {
+      if (this.tries < this.maxTries) {
+        this.tries++
+
+        if(this.tries === this.maxTries) {
+          this.step++
+        }
+
+        if (this.tries % this.triesPerStep === 0 && this.tries < this.maxTries) {
           fetchGeminiReport()
         }
+
+        this.score += score
+      }
+
+      if(this.tries === this.maxTries) {
+        this.gameStarted = false
+        this.geminiReport = null
       }
     },
     addScore(score) {
@@ -179,6 +233,9 @@ export const useScoreStore = defineStore('score', {
       this.replayVideo = null
       this.gameStarted = false
       this.gameId = null
+      this.device = getQueryParam('device', false) || '1'
+      this.replayVideo = null
+      this.gameStarted = false
       this.geminiReport = null
     }
   }
@@ -186,11 +243,11 @@ export const useScoreStore = defineStore('score', {
 
 export const useHightlightsStore = defineStore('highlights', {
   state: () => ({
-    score1: 0,
-    score2: 0,
-    score3: 0,
-    score4: 0,
-    score5: 0,
+    score1: 600,
+    score2: 500,
+    score3: 400,
+    score4: 200,
+    score5: 100,
     video: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     unsubscribe: null,
   }),

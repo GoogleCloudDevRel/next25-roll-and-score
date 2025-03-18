@@ -45,7 +45,6 @@ const wrapper = ref(null)
 const badge = ref(null)
 
 const { replayVideo, gameStarted } = storeToRefs(useScoreStore())
-
 const { navigateTo } = useRouteManager()
 
 const animateSet = () => {
