@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@activetheory/split-text": "^1.1.2",
+    "firebase": "^11.4.0",
     "gsap": "^3.12.7",
     "ogl": "^1.0.11",
     "pinia": "^3.0.1",

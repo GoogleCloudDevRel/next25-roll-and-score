@@ -15,7 +15,7 @@ import colors from '@/utils/colors'
 import geminiMSDF from '@/assets/gemini_msdf.png'
 import { useRouteManager } from '@/router/useRouteManager'
 
-const { isTransitioning, isLanding } = useRouteManager()
+const { isTransitioning, currentRoute } = useRouteManager()
 
 // Declare a prop for the oglState
 const props = defineProps({
@@ -220,7 +220,7 @@ onMounted(() => {
         () => isTransitioning.value,
         () => {
           if (!isTransitioning.value) return
-          updateGrayscale(!isLanding.value)
+          updateGrayscale(currentRoute.value.id !== 'intro')
         },
       )
     }
