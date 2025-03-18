@@ -36,3 +36,5 @@ storybook-static
 .env
 .env.*
 !.env.template
+
+firebaseConfigProd.js
