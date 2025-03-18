@@ -107,37 +107,6 @@ const fetchGeminiReport = async () => {
   }
 }
 
-
-
-// TODO: fetch video replay
-const fetchVideoReplay = async () => {
-  try {
-    const response = await fetch('/api/video-replay');
-    const data = await response.json();
-    console.log(data)
-  } catch (error) {
-    console.error('Error fetching video replay:', error);
-  } finally {
-    useScoreStore().setVideoReplay('https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')
-  }
-}
-
-// TODO: fetch gemini report
-const fetchGeminiReport = async () => {
-  await fetchVideoReplay()
-
-  try {
-    const response = await fetch('/api/gemini-report');
-    const data = await response.json();
-    console.log(data)
-    useScoreStore().setGeminiReport(data.geminiReport);
-  } catch (error) {
-    console.error('Error fetching gemini report:', error);
-  } finally {
-    useScoreStore().setGeminiReport('This is a test report')
-  }
-}
-
 export const useScoreStore = defineStore('score', {
   state: () => ({
     score: 0,
