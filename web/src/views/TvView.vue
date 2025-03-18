@@ -32,7 +32,6 @@ import FinalScreen from '../routes/FinalScreen.vue'
 import { getQueryParam } from '@/utils/get-query-param'
 import { subscribeGameStarted, subscribeToScoreChanges, useScoreStore } from '@/store'
 import { storeToRefs } from 'pinia'
-import { signIn } from '@/config/firebaseConfig'
 
 
 const activeRoutes = shallowRef([])
@@ -97,8 +96,6 @@ onMounted(async () => {
   navigateTo(initialView ?? navigationFlow[0])
 
   document.body.addEventListener('click', handleClick)
-
-  await signIn()
 
   unsubscribeGameStarted = subscribeGameStarted()
   unsubscribeScoreChanges = subscribeToScoreChanges()

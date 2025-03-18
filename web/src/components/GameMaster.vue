@@ -66,7 +66,7 @@ import { gsap } from '@/utils/gsap'
 import BackgroundBase from './background/BackgroundBase.vue'
 import BackgroundRings from './background/BackgroundRings.vue'
 import { doc, updateDoc, onSnapshot, collection, addDoc, query, orderBy } from 'firebase/firestore'
-import { db, signIn } from '@/config/firebaseConfig'
+import { db } from '@/config/firebaseConfig'
 import VTable from './VTable.vue'
 import { waitFor } from '@/utils/deferred'
 
@@ -106,7 +106,6 @@ const unsubscribeListeners = {} // Store unsubscribe functions
 
 onMounted(async () => {
   blocks.value = Array.from(dashboard.value.querySelectorAll('.block'))
-  await signIn()
   setupListeners()
   setupTableData()
 })
