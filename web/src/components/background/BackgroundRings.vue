@@ -208,7 +208,7 @@ onMounted(() => {
           })
           gsap.to(speed, {
             value: speed.value + 2,
-            duration: 4,
+            duration: 4.2,
             ease: 'cubic.inOut',
           })
         })

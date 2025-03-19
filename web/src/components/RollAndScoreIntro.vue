@@ -107,11 +107,13 @@ defineExpose({
     ])
   },
   animateOut: async () => {
-    pre.value.animateOut(), text.value.animateOut(0, { yPercent: -130 })
+    pre.value.animateOut()
+    text.value.animateOut(0, { yPercent: -130, stagger: 0.05 })
     sub.value.animateOut()
     await gsap.to(svg.value, {
       scale: 0,
-      duration: 1.5,
+      duration: 1,
+      delay: 0.15 + (text.value.splitText?.chars.length * 0.05 || 0),
       ease: 'power2.in',
     })
   },
@@ -139,7 +141,7 @@ defineExpose({
   justify-content: center;
 
   .inner {
-    padding: px-to-vw(115, 4k);
+    padding: px-to-vw(115, 4k) px-to-vw(150, 4k);
     overflow: hidden;
   }
 

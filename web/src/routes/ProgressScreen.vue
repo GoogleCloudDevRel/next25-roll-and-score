@@ -6,15 +6,10 @@
       text="Loading analysis"
     />
     <div
-      class="gemini-icon-container"
-      ref="geminiIconRef"
+      class="gemini-icon-spin"
+      ref="geminiIconSpinRef"
     >
-      <div
-        class="gemini-icon-spin"
-        ref="geminiIconSpinRef"
-      >
-        <IconGemini class="gemini-icon" />
-      </div>
+      <IconGemini class="gemini-icon" />
     </div>
     <VProgress />
   </div>
@@ -36,7 +31,6 @@ const { navigateTo, isTransitioning, previousRoute } = useRouteManager()
 const { gameStarted, geminiReport, replayVideo } = storeToRefs(useScoreStore())
 
 const progressTextRef = ref(null)
-const geminiIconRef = ref(null)
 const geminiIconSpinRef = ref(null)
 
 watch(
@@ -53,21 +47,21 @@ const animatedOut = ref(false)
 
 defineExpose({
   animateSet: async () => {
-    gsap.set(geminiIconRef.value, {
+    gsap.set(geminiIconSpinRef.value, {
       scale: 0,
     })
     await progressTextRef.value.prepare()
   },
   animateIn: async () => {
     animatedOut.value = false
-    await new Promise((resolve) => setTimeout(resolve, 2000))
     await Promise.all([
-      progressTextRef.value.animateIn(),
-      gsap.to(geminiIconRef.value, {
+      progressTextRef.value.animateIn(2),
+      gsap.to(geminiIconSpinRef.value, {
         scale: 1,
         rotate: '+=180',
-        duration: 1.2,
-        ease: 'power2.inOut',
+        duration: 2,
+        delay: 1.4,
+        ease: 'expo.inOut',
       }),
     ])
   },
@@ -75,7 +69,7 @@ defineExpose({
     animatedOut.value = true
     await Promise.all([
       progressTextRef.value.animateOut(),
-      gsap.to(geminiIconRef.value, {
+      gsap.to(geminiIconSpinRef.value, {
         rotate: '+=180',
         scale: 0,
         duration: 1.2,
@@ -89,7 +83,7 @@ defineExpose({
       if (animatedOut.value) break
       await new Promise((resolve) => setTimeout(resolve, 1200))
       if (animatedOut.value) break
-      gsap.to(geminiIconRef.value, {
+      gsap.to(geminiIconSpinRef.value, {
         rotate: '+=180',
         duration: 1.2,
         ease: 'power2.inOut',

@@ -134,8 +134,8 @@ defineExpose({
     badge.value?.animateIn()
     await gsap.to(bg.value, {
       scale: 1,
-      duration: 1,
-      ease: 'power2.inOut',
+      duration: 1.6,
+      ease: 'back.out',
     })
   },
   animateOut: () => {

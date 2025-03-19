@@ -9,15 +9,15 @@
       class="confetti-item"
       ref="confettiItems"
     >
-      <IconBase variant="gemini" />
+      <IconGemini class="confetti-item-icon" />
     </div>
   </div>
 </template>
 
 <script setup>
-import IconBase from './IconBase.vue'
 import { gsap } from '@/utils/gsap'
 import { ref, onMounted } from 'vue'
+import IconGemini from './icons/IconGemini.vue'
 
 const confettiContainer = ref(null)
 const confettiItems = ref([])
@@ -70,10 +70,12 @@ function animateIn() {
     const targetY = Math.sin(radians) * distance - window.innerHeight / 2 // Offset to make more upward initially
 
     // Phase 1: Explosion - items fly outward in all directions
+    const rotation = getRandomBetween(-360, 360)
+    gsap.set(item, { '--rotation-direction': Math.sign(rotation) })
     tl.to(item, {
       x: targetX,
       y: targetY,
-      rotation: getRandomBetween(-360, 360),
+      rotation,
       duration: getRandomBetween(1.5, 2.5),
       delay: getRandomBetween(0, 0.3),
       ease: 'power2.out',
@@ -83,13 +85,14 @@ function animateIn() {
       .to(item, {
         y: window.innerHeight + 100, // Ensure it goes below the viewport
         x: `+=${getRandomBetween(-200, 200)}`, // Drift while falling
-        rotation: `+=${getRandomBetween(-720, 720)}`,
+        rotation: `${Math.sign(rotation) * getRandomBetween(720, 1440)}`,
         duration: getRandomBetween(2, 3.5),
         ease: 'power1.in', // Ease-in for gravity effect
         onComplete: () => {
           // Fade out at the end of animation
           gsap.to(item, {
             opacity: 0,
+            display: 'none',
             duration: 0.3,
           })
         },
@@ -119,6 +122,7 @@ defineExpose({
 }
 
 .confetti-item {
+  --rotation-direction: 1;
   position: absolute;
   bottom: 0;
   will-change: transform;
@@ -129,6 +133,23 @@ defineExpose({
   height: px-to-vw(240, 4k);
   fill: var(--color, currentColor);
   vector-effect: non-scaling-stroke;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(calc(var(--rotation-direction) * 0deg));
+  }
+  to {
+    transform: rotate(calc(var(--rotation-direction) * 360deg));
+  }
+}
+.confetti-item-icon {
+  filter: drop-shadow(px-to-vw(5, '4k') px-to-vw(10, '4k') black);
+  stroke: black;
+  stroke-width: px-to-vw(3, '4k');
+  paint-order: fill stroke;
+
+  animation: rotate 5s linear infinite;
 }
 
 .confetti-item:nth-child(5n) :deep(svg) {
