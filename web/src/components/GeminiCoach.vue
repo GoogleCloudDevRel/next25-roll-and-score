@@ -141,7 +141,6 @@ defineExpose({
   animateOut: () => {
     textContent.value.animateOut(0)
     badge.value?.animateOut()
-    console.log(textContent.value.splitText)
     gsap.to(bg.value, {
       scale: 0,
       duration: 1,

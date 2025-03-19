@@ -44,7 +44,7 @@ watch(step, async (value) => {
       waitFor(() => !isTransitioning.value),
       new Promise((resolve) => setTimeout(resolve, 2000)),
     ])
-    navigateTo(value === maxSteps.value ? 'final' : 'replay')
+    navigateTo(value === maxSteps.value ? 'final' : 'progress')
   }
 })
 
@@ -72,7 +72,7 @@ defineExpose({
     }
   },
   animateIdle: async () => {
-    if (!getQueryParam('autoScore')) return
+    if (!getQueryParam('manual')) return
     await new Promise((resolve) => setTimeout(resolve, 2500))
     store.setScore(tries.value >= 6 ? 350 : tries.value >= 3 ? 200 : 50)
     await new Promise((resolve) => setTimeout(resolve, 2500))
@@ -80,7 +80,6 @@ defineExpose({
     await new Promise((resolve) => setTimeout(resolve, 2500))
     store.setScore(tries.value >= 6 ? 550 : tries.value >= 3 ? 300 : 125)
     await new Promise((resolve) => setTimeout(resolve, 2500))
-    if (getQueryParam('manual')) return
   },
 })
 </script>

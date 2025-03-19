@@ -35,13 +35,12 @@ npm run lint
 ## App Routes
   - `http://localhost:3000/!#/`: Big Tv 65"
   - `http://localhost:3000/!#/tv`: Tv 55"
-  - `http://localhost:3000/!#/chromebook`: Chromebook
-  - `http://localhost:3000/!#/phone`: Phone
+  - `http://localhost:3000/!#/chromebook`: Chromebook (only via gameId)
+  - `http://localhost:3000/!#/gamemaster`: Game Master (for staff)
+  - `http://localhost:3000/!#/control`: Control (for staff/mobile)
+  - `http://localhost:3000/!#/phone`: Phone (only via gameId)
 
 ## queryParams
   - `?manual` to control of the navigation by clicking to go next
   - `?view` to start from a specific route
-  - `?rank` to simulate the celebratory moment on tv screen
   - `?device` to adjust UI based on which station/device you're on
-  - `?autoScore` to simulate a gameplay
-  - `?loop` to ping/pong between intro and highlights each 15 seconds

@@ -31,23 +31,14 @@
 </template>
 
 <script setup>
-import { shallowRef, onMounted, onUnmounted } from 'vue'
+import { shallowRef } from 'vue'
 import LeaderBoard from './leaderboard/LeaderBoard.vue'
-import { useHightlightsStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { gsap } from '@/utils/gsap'
-import { useScoreStore } from '@/store'
+import { useHightlightsStore, useScoreStore } from '@/store'
 
 const store = useHightlightsStore()
 const scoreStore = useScoreStore()
-
-onMounted(() => {
-  store.fetchTopScores()
-})
-
-onUnmounted(() => {
-  store.stopFetchingTopScores()
-})
 
 const { score1, score2, score3, score4, score5, video: videoUrl } = storeToRefs(store)
 

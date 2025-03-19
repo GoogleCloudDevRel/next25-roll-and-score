@@ -190,25 +190,23 @@ const handleResize = () => {
   animateSet(!isAnimated.value, setOpts)
 }
 
-watch(
-  () => props.text,
-  async () => {
-    if (prepared.value) {
-      isPreparing.value = true
-      el.value.style.opacity = 0
-      splitText.value.revert()
-      innerText.value = props.text
-      await nextTick()
-      splitText.value.split()
-      handleGradient()
-      isPreparing.value = false
-      await animateSet(!isAnimated.value, setOpts)
-      el.value.style.opacity = 1
-    } else {
-      innerText.value = props.text
-    }
-  },
-)
+const setText = async (text) => {
+  if (prepared.value) {
+    isPreparing.value = true
+    el.value.style.opacity = 0
+    splitText.value.revert()
+    innerText.value = text
+    await nextTick()
+    splitText.value.split()
+    handleGradient()
+    isPreparing.value = false
+    await animateSet(!isAnimated.value, setOpts)
+    el.value.style.opacity = 1
+  } else {
+    innerText.value = text
+  }
+}
+watch(() => props.text, setText)
 
 onMounted(async () => {
   if (props.icon) {
@@ -227,6 +225,7 @@ defineExpose({
   animateIn,
   animateOut,
   splitText,
+  setText,
   ready: () => waitUntil(() => !isPreparing.value && prepared.value),
 })
 </script>

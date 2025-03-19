@@ -4,6 +4,7 @@ import { db } from '@/config/firebaseConfig';
 import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, getDoc, getDocs } from "firebase/firestore";
 
 export const saveEndGame = async () => {
+  if (getQueryParam('manual')) return
   const scoreStore = useScoreStore()
   const gameId = scoreStore.gameId
   const game = doc(collection(db, 'games'), gameId);
@@ -87,6 +88,7 @@ const fetchVideoReplay = async () => {
   } catch (error) {
     console.error('Error fetching video replay:', error);
   } finally {
+    await new Promise((resolve) => setTimeout(resolve, 5000))
     useScoreStore().setVideoReplay('https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')
   }
 }
@@ -103,6 +105,7 @@ const fetchGeminiReport = async () => {
   } catch (error) {
     console.error('Error fetching gemini report:', error);
   } finally {
+    await new Promise((resolve) => setTimeout(resolve, 5000))
     useScoreStore().setGeminiReport('This is a test report')
   }
 }
@@ -111,7 +114,7 @@ export const useScoreStore = defineStore('score', {
   state: () => ({
     score: 0,
     tries: 0,
-    step: 1,
+    step: 0,
     maxTries: 9,
     maxSteps: 3,
     triesPerStep: 3,
@@ -123,6 +126,8 @@ export const useScoreStore = defineStore('score', {
   }),
   actions: {
     setScore(score) {
+      this.geminiReport = null
+      this.replayVideo = null
       if (this.tries < this.maxTries) {
         this.tries++
 
@@ -131,13 +136,15 @@ export const useScoreStore = defineStore('score', {
 
       if (this.tries % this.triesPerStep === 0) {
         this.step++
-        console.log(this.step)
+        console.log(this.step, this.tries)
         if (this.step < this.maxSteps) {
           fetchGeminiReport()
         }
       }
     },
     addScore(score) {
+      this.geminiReport = null
+      this.replayVideo = null
       if (this.tries < this.maxTries) {
         this.tries++
 
@@ -146,7 +153,7 @@ export const useScoreStore = defineStore('score', {
 
       if (this.tries % this.triesPerStep === 0) {
         this.step++
-        console.log(this.step)
+        console.log(this.step, this.tries)
         if (this.step < this.maxSteps) {
           fetchGeminiReport()
         }
@@ -182,6 +189,23 @@ export const useScoreStore = defineStore('score', {
   }
 })
 
+export const subscribeToHighlightsChanges = async () => {
+  const highlightsStore = useHightlightsStore()
+  const scoresCollection = collection(db, 'games');
+  const q = query(scoresCollection, orderBy('totalScore', 'desc'), limit(5));
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const scores = [];
+    querySnapshot.forEach((doc) => {
+      scores.push(doc.data().totalScore);
+    })
+    console.log(scores)
+
+    highlightsStore.setScores(scores)
+  })
+
+  return unsubscribe
+}
+
 export const useHightlightsStore = defineStore('highlights', {
   state: () => ({
     score1: 0,
@@ -189,31 +213,16 @@ export const useHightlightsStore = defineStore('highlights', {
     score3: 0,
     score4: 0,
     score5: 0,
+    // TODO: fetch/retrieve video
     video: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    unsubscribe: null,
   }),
   actions: {
-    async fetchTopScores() {
-      const scoresCollection = collection(db, 'games');
-      const q = query(scoresCollection, orderBy('totalScore', 'desc'), limit(5));
-
-      this.unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const scores = [];
-        querySnapshot.forEach((doc) => {
-          scores.push(doc.data().totalScore);
-        })
-
-        this.score1 = scores[0] || 0; // Use 0 as default if scores[0] is undefined
-        this.score2 = scores[1] || 0;
-        this.score3 = scores[2] || 0;
-        this.score4 = scores[3] || 0;
-        this.score5 = scores[4] || 0;
-      });
-    },
-    stopFetchingTopScores() {
-      if (this.unsubscribe) {
-        this.unsubscribe();
-      }
+    setScores(scores) {
+      this.score1 = scores[0] || 0;
+      this.score2 = scores[1] || 0;
+      this.score3 = scores[2] || 0;
+      this.score4 = scores[3] || 0;
+      this.score5 = scores[4] || 0;
     },
     setVideo(video) {
       this.video = video || "https://www.youtube.com/watch?v=3aoxOtMM2rc";
@@ -243,7 +252,10 @@ export const useMobileScoreStore = defineStore('mobileScore', {
       this.finalScore = game.totalScore
 
       // TBD:
-      this.description = 'This is a test description'
+      this.description = `Preliminary analysis of "The Maestro's" skeeball session reveals a near-perfect execution of technique and strategy.
+      Trajectory analysis indicates consistent arc angles and velocity, resulting in an unprecedented point accumulation.
+      Further research is warranted to determine if this level of skeeball proficiency constitutes a new paradigm in competitive arcade gaming.`
+      this.description = this.description.replace(/\n/g, '<br>')
       // TBD:
       this.videoSrc = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
     }

@@ -25,7 +25,7 @@ import { useRouteManager } from '@/router/useRouteManager'
 import { nextTick, onMounted, onUnmounted, shallowRef } from 'vue'
 import { getQueryParam } from '@/utils/get-query-param'
 import QRCode from '@/components/QRCode.vue'
-
+import { subscribeToHighlightsChanges } from '@/store'
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
 
@@ -51,20 +51,14 @@ function handleClick(e) {
   navigateTo(Object.keys(routes)[++index])
 }
 
+let unsubscribeHighlightsChanges = null
 // Register routes with their animations
 onMounted(async () => {
   registerRoutes(routes, activeRoutes, activeRoutesRef)
 
   await nextTick()
 
-  if (getQueryParam('loop')) {
-    let loopIndex = 0
-    navigateTo('intro')
-    setInterval(() => {
-      loopIndex = loopIndex === Object.keys(routes).length - 1 ? 0 : loopIndex + 1
-      navigateTo(Object.keys(routes)[loopIndex])
-    }, 15000)
-  } else {
+  if (getQueryParam('manual')) {
     const initialView = Object.keys(routes).find((key) => getQueryParam('view', false) === key)
     index = Object.keys(routes).indexOf(initialView)
     index = index === -1 ? 0 : index
@@ -72,11 +66,23 @@ onMounted(async () => {
     navigateTo(initialView ?? 'intro')
 
     document.body.addEventListener('click', handleClick)
+  } else {
+    let loopIndex = 0
+    navigateTo('intro')
+    setInterval(() => {
+      loopIndex = loopIndex === Object.keys(routes).length - 1 ? 0 : loopIndex + 1
+      navigateTo(Object.keys(routes)[loopIndex])
+    }, 15000)
   }
+
+  unsubscribeHighlightsChanges = subscribeToHighlightsChanges()
 })
 
 onUnmounted(() => {
-  document.body.removeEventListener('click', handleClick)
+  if (getQueryParam('manual')) {
+    document.body.removeEventListener('click', handleClick)
+  }
+  unsubscribeHighlightsChanges()
 })
 </script>
 

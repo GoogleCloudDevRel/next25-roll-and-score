@@ -29,10 +29,15 @@ import ScoreScreen from '../routes/ScoreScreen.vue'
 import ReplayScreen from '../routes/ReplayScreen.vue'
 import ReportScreen from '../routes/ReportScreen.vue'
 import FinalScreen from '../routes/FinalScreen.vue'
+import ProgressScreen from '../routes/ProgressScreen.vue'
 import { getQueryParam } from '@/utils/get-query-param'
-import { subscribeGameStarted, subscribeToScoreChanges, useScoreStore } from '@/store'
+import {
+  subscribeGameStarted,
+  subscribeToHighlightsChanges,
+  subscribeToScoreChanges,
+  useScoreStore,
+} from '@/store'
 import { storeToRefs } from 'pinia'
-
 
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
@@ -42,17 +47,20 @@ const routes = {
   welcome: WelcomeScreen,
   start: StartScreen,
   score: ScoreScreen,
+  progress: ProgressScreen,
   replay: ReplayScreen,
   report: ReportScreen,
   final: FinalScreen,
 }
 
-const { registerRoutes, navigateTo, isTransitioning } = useRouteManager()
-const { gameStarted } = storeToRefs(useScoreStore())
+const { registerRoutes, navigateTo, isTransitioning, onRouteChange } = useRouteManager()
+const scoreStore = useScoreStore()
+const { gameStarted } = storeToRefs(scoreStore)
 
 watch(
   () => !gameStarted.value && !isTransitioning.value,
   (v) => {
+    if (getQueryParam('manual')) return
     if (v) {
       navigateTo('intro')
     }
@@ -65,9 +73,11 @@ const navigationFlow = [
   'welcome',
   'start',
   'score',
+  'progress',
   'replay',
   'report',
   'score',
+  'progress',
   'replay',
   'report',
   'score',
@@ -77,11 +87,17 @@ const navigationFlow = [
 function handleClick(e) {
   e.preventDefault()
   if (isTransitioning.value) return
+  scoreStore.setGameStarted(true)
   navigateTo(navigationFlow[++index])
 }
 
 let unsubscribeGameStarted = null
 let unsubscribeScoreChanges = null
+let unsubscribeHighlightsChanges = null
+onRouteChange((route) => {
+  index = navigationFlow.indexOf(route.id)
+  console.log(index, navigationFlow[index])
+})
 
 // Register routes with their animations
 onMounted(async () => {
@@ -95,16 +111,23 @@ onMounted(async () => {
 
   navigateTo(initialView ?? navigationFlow[0])
 
-  document.body.addEventListener('click', handleClick)
-
-  unsubscribeGameStarted = subscribeGameStarted()
-  unsubscribeScoreChanges = subscribeToScoreChanges()
+  if (getQueryParam('manual')) {
+    document.body.addEventListener('click', handleClick)
+  } else {
+    unsubscribeGameStarted = subscribeGameStarted()
+    unsubscribeScoreChanges = subscribeToScoreChanges()
+    unsubscribeHighlightsChanges = subscribeToHighlightsChanges()
+  }
 })
 
 onUnmounted(() => {
-  unsubscribeGameStarted()
-  unsubscribeScoreChanges()
-  document.body.removeEventListener('click', handleClick)
+  if (getQueryParam('manual')) {
+    document.body.removeEventListener('click', handleClick)
+  } else {
+    unsubscribeGameStarted()
+    unsubscribeScoreChanges()
+    unsubscribeHighlightsChanges()
+  }
 })
 </script>
 

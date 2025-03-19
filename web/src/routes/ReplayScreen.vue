@@ -99,7 +99,7 @@ defineExpose({
     if (getQueryParam('manual')) return
     await Promise.race([
       new Promise((resolve) => (video.value.onended = () => resolve())),
-      new Promise((resolve) => setTimeout(resolve, 5000)),
+      new Promise((resolve) => setTimeout(resolve, 10000)),
     ])
     if (gameStarted.value) {
       navigateTo('report')

@@ -16,7 +16,7 @@
       :text="
         rank > 0 && rankStep === 0
           ? copy.finalTopScoreText.replace('${rank}', rank)
-          : copy.finalBottomScoreText.replace('${device}', device)
+          : copy.finalText.replace('${device}', device)
       "
     />
     <VConfetti ref="confetti" />
