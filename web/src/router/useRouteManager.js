@@ -13,7 +13,6 @@ instance._prevIndex = null
 export function useRouteManager() {
   // Enhanced navigation with automatic state updates and error handling
   const navigateTo = async (routeId, data) => {
-    console.log(instance.currentRoute.value, instance.isTransitioning.value);
     if(instance.isTransitioning.value) return;
     if(instance.currentRoute.value?.id === routeId) return;
 
