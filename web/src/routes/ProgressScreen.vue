@@ -12,6 +12,10 @@
       <IconGemini class="gemini-icon" />
     </div>
     <VProgress />
+    <VConfetti
+      ref="confetti"
+      use-blue
+    />
   </div>
 </template>
 
@@ -25,13 +29,14 @@ import copy from '@/copy.json'
 import IconGemini from '@/components/icons/IconGemini.vue'
 import { gsap } from '@/utils/gsap'
 import VProgress from '@/components/VProgress.vue'
-
+import VConfetti from '@/components/VConfetti.vue'
 const { navigateTo, isTransitioning, previousRoute } = useRouteManager()
 
 const { gameStarted, geminiReport, replayVideo } = storeToRefs(useScoreStore())
 
 const progressTextRef = ref(null)
 const geminiIconSpinRef = ref(null)
+const confetti = ref(null)
 
 watch(
   () => geminiReport.value && replayVideo.value && gameStarted.value && !isTransitioning.value,
@@ -51,10 +56,12 @@ defineExpose({
       scale: 0,
     })
     await progressTextRef.value.prepare()
+    confetti.value.animateSet()
   },
   animateIn: async () => {
     animatedOut.value = false
     await Promise.all([
+      confetti.value.animateIn(2),
       progressTextRef.value.animateIn(2),
       gsap.to(geminiIconSpinRef.value, {
         scale: 1,

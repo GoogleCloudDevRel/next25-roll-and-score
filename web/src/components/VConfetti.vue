@@ -1,6 +1,6 @@
 <template>
   <div
-    class="confetti"
+    :class="['confetti', { blue: useBlue }]"
     ref="confettiContainer"
   >
     <div
@@ -18,6 +18,13 @@
 import { gsap } from '@/utils/gsap'
 import { ref, onMounted } from 'vue'
 import IconGemini from './icons/IconGemini.vue'
+
+const defineProps = defineProps({
+  useBlue: {
+    type: Boolean,
+    default: false,
+  },
+})
 
 const confettiContainer = ref(null)
 const confettiItems = ref([])
@@ -41,7 +48,7 @@ function animateSet() {
   })
 }
 
-function animateIn() {
+function animateIn(delay = 0) {
   if (!confettiItems.value.length) return
 
   // First make all items visible
@@ -52,7 +59,7 @@ function animateIn() {
   // Animate each confetti item in an explosion pattern
   confettiItems.value.forEach((item, index) => {
     // Create a timeline for each confetti piece
-    const tl = gsap.timeline()
+    const tl = gsap.timeline({ delay })
 
     // Calculate spread direction - divide the items across the full 360 degrees
     // with some randomization
@@ -152,19 +159,25 @@ defineExpose({
   animation: rotate 5s linear infinite;
 }
 
-.confetti-item:nth-child(5n) :deep(svg) {
+.confetti.blue {
+  .confetti-item :deep(svg) {
+    --color: #{$brandBlue};
+  }
+}
+
+.confetti:not(.blue) .confetti-item:nth-child(5n) :deep(svg) {
   --color: #{$brandRed}; /* Red */
 }
 
-.confetti-item:nth-child(5n + 1) :deep(svg) {
+.confetti:not(.blue) .confetti-item:nth-child(5n + 1) :deep(svg) {
   --color: #{$brandGreen}; /* Green */
 }
 
-.confetti-item:nth-child(5n + 2) :deep(svg) {
+.confetti:not(.blue) .confetti-item:nth-child(5n + 2) :deep(svg) {
   --color: #{$brandBlue}; /* Blue */
 }
 
-.confetti-item:nth-child(5n + 3) :deep(svg) {
+.confetti:not(.blue) .confetti-item:nth-child(5n + 3) :deep(svg) {
   --color: #{$brandYellow}; /* Yellow */
 }
 </style>
