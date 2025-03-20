@@ -290,6 +290,11 @@ $boxShadow: 2px 3px 0px 0px #000000;
   .button-wrapper {
     position: fixed;
     bottom: 30px;
+    width: calc(100% - 20px);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .description-wrapper {

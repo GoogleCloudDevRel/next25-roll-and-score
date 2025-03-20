@@ -7,17 +7,13 @@
       :src="src"
       alt="QR Code"
     />
-    <VText
-      text="How it works"
-      variant="tv-bold-40"
-    />
+    <div class="qr-code__text">How it works</div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { generateQR } from '@/utils/qr'
-import VText from './VText.vue'
 import { useScoreStore } from '@/store'
 
 const qrCodeRef = ref(null)
@@ -71,6 +67,14 @@ onMounted(async () => {
 
   img {
     width: 100%;
+  }
+
+  .qr-code__text {
+    font-size: px-to-vw(36, 4k);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    color: #000;
+    text-transform: uppercase;
   }
 }
 </style>

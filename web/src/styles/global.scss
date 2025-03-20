@@ -10,8 +10,8 @@ html {
   width: 100%;
   height: 100%;
   -ms-content-zooming: none;
-  -ms-touch-action: none;
-  touch-action: none;
+  -ms-touch-action: pan-y;
+  touch-action: pan-y;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;

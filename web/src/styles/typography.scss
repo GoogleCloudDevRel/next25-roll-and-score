@@ -155,8 +155,8 @@
     font-size: 42px;
     line-height: 1;
     letter-spacing: -0.02em;
-    text-shadow: 0.05em 0.07em 0 #000;
-    -webkit-text-stroke: max(1px, 0.02em);
+    text-shadow: 2px 2px 0 #000;
+    -webkit-text-stroke: 3px;
     -webkit-text-stroke-color: #000;
     paint-order: stroke fill;
   }
@@ -167,11 +167,11 @@
     font-size: 16px;
     line-height: 1;
     letter-spacing: -0.012em;
-    text-shadow: 0.06em 0.1em 0 #000;
-    -webkit-text-stroke: max(1px, 0.02em);
-    -webkit-text-stroke-color: #000;
-    -webkit-text-stroke-width: max(1px, 0.02em);
+    text-shadow: 1px 1px 0 rgb(0, 0, 0);
+    -webkit-text-stroke: 1.5px;
+    -webkit-text-stroke-color: rgb(0, 0, 0);
     paint-order: stroke fill;
+    -webkit-transform: translateZ(0);
   }
 
   .text-mobile-medium-15 {
