@@ -33,7 +33,6 @@ npm run lint
 ```
 
 ## App Routes
-
   - `http://localhost:3000/!#/`: Big Tv 65"
   - `http://localhost:3000/!#/tv`: Tv 55"
   - `http://localhost:3000/!#/chromebook`: Chromebook
@@ -43,3 +42,5 @@ npm run lint
   - `?manual` to control of the navigation by clicking to go next
   - `?view` to start from a specific route
   - `?rank` to simulate the celebratory moment on tv screen
+  - `?device` to adjust UI based on which station/device you're on
+  - `?autoScore` to simulate a gameplay

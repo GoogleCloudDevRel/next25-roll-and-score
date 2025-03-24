@@ -86,11 +86,8 @@ export class RouteManager {
     this.currentRoute.value = toRoute
 
     try {
-      if (this.customRouteChange) {
-        await this.customRouteChange(toRoute, fromRoute)
-      } else {
-        await this.onRouteChange(toRoute, fromRoute)
-      }
+      await this.customRouteChange?.(toRoute, fromRoute)
+      await this.onRouteChange(toRoute, fromRoute)
     } catch (error) {
       console.error('Route transition failed:', error)
       throw error

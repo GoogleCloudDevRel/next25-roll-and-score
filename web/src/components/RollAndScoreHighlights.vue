@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper">
+  <div :class="['wrapper', { 'wrapper--device-1': scoreStore.device === '1' }]">
     <div
       class="highlights"
       ref="highlights"
@@ -17,7 +17,15 @@
       <div
         class="video-block"
         ref="videoBlock"
-      ></div>
+      >
+        <video
+          :src="videoUrl"
+          autoplay
+          muted
+          class="video"
+          ref="video"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -28,10 +36,12 @@ import LeaderBoard from './leaderboard/LeaderBoard.vue'
 import { useHightlightsStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { gsap } from '@/utils/gsap'
+import { useScoreStore } from '@/store'
 
 const store = useHightlightsStore()
+const scoreStore = useScoreStore()
 
-const { score1, score2, score3, score4, score5 } = storeToRefs(store)
+const { score1, score2, score3, score4, score5, video: videoUrl } = storeToRefs(store)
 
 const leaderboard = shallowRef(null)
 const videoBlock = shallowRef(null)
@@ -66,6 +76,15 @@ defineExpose({
   justify-content: center;
   min-height: 100vh;
   padding: px-to-vw(48, 4k);
+
+  &--device-1 {
+    .sidebar {
+      grid-column-start: 2;
+      grid-column-end: 3;
+      grid-row-start: 1;
+      grid-row-end: 2;
+    }
+  }
 }
 
 .highlights {
@@ -87,13 +106,19 @@ defineExpose({
   text-align: center;
   background: #bebebe;
   box-shadow:
-    0 0 0 px-to-vw(2) #000,
-    px-to-vw(3) px-to-vw(4) 0 0 #000;
-  border-radius: px-to-vw(25);
-  padding: px-to-vw(30);
+    0 0 0 px-to-vw(3, 4k) #000,
+    px-to-vw(10, 4k) px-to-vw(10, 4k) 0 0 #000;
+  border-radius: px-to-vw(50, 4k);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  overflow: hidden;
+
+  .video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 </style>

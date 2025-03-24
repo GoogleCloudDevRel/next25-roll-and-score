@@ -8,10 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix",
-    "format": "prettier --write src/",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "generate-component": "node tools/generate-component.js"
+    "format": "prettier --write src/"
   },
   "dependencies": {
     "@activetheory/split-text": "^1.1.2",
@@ -19,6 +16,7 @@
     "ogl": "^1.0.11",
     "pinia": "^3.0.1",
     "prismjs": "^1.29.0",
+    "qrcode": "^1.5.4",
     "tweakpane": "^4.0.5",
     "vue": "^3.5.13"
   },

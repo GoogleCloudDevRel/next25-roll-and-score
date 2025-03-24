@@ -60,7 +60,7 @@
             <div class="score-wrapper">
               <VText
                 variant="mobile-bold-24"
-                :text="finalScore"
+                :text="String(finalScore)"
                 center
               />
             </div>
@@ -167,16 +167,15 @@ defineProps({
 
 const heading = ref(null)
 
-onMounted(() => {
-  heading.value.prepare()
-  descriptionText.value.prepare()
-  animateSet()
+onMounted(async () => {
   window.scrollTo(0, 0)
 })
 
 const backings = [backing, videoWrapper, descriptionWrapper]
 
-const animateSet = () => {
+const animateSet = async () => {
+  await heading.value.prepare()
+  await descriptionText.value.prepare()
   heading.value.animateSet()
   descriptionText.value.animateSet()
   badges.value.forEach((badge) => {
