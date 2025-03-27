@@ -1,0 +1,59 @@
+# Python bytecode and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Dependencies
+*.egg-info/
+dist/
+build/
+develop-eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+*.whl
+.installed.txt
+*.egg
+
+# Configuration files (if they contain sensitive data)
+*.ini
+*.cfg
+*.config
+*.env
+.env
+.env.*
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+
+# IDE specific files
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+*.pydevproject
+*.tmproj
+.vscode/
+
+# Distribute/packaging
+.python-version
+bin/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Other
+*.pth
