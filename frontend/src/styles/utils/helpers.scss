@@ -1,0 +1,72 @@
+/* -----
+Responsive hover
+----- */
+@mixin hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+@mixin gradient-border(
+  $gradient: (
+    45deg,
+    #e1e1e1,
+    #333333,
+  ),
+  $border-width: 1px,
+  $border-radius: 10px
+) {
+  position: relative;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - #{$border-width});
+    height: calc(100% - #{$border-width});
+    border: $border-width solid transparent;
+    background: linear-gradient($gradient) border-box;
+    mask:
+      linear-gradient(#000 0 0) padding-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+}
+
+
+// Example usage:
+// height: px-to-vh(108, 'chromebook'); // This will output: height: 5vh;
+@function px-to-vh($pixels, $device: 'chromebook') {
+  @if $device != 'chromebook' {
+    $vh-value: calc($pixels / 2160) * 100;
+    @return #{$vh-value}vh;
+  } @else {
+    $vh-value: calc($pixels / 1080) * 100;
+    @return #{$vh-value}vh;
+  }
+}
+
+// Example usage:
+// width: px-to-vw(108, 'chromebook'); // This will output: 5.625vw;
+@function px-to-vw($pixels, $device: 'chromebook') {
+  @if $device != 'chromebook' {
+    $vw-value: calc($pixels / 3840) * 100;
+    @return #{$vw-value}vw;
+  } @else {
+    $vw-value: calc($pixels / 1920) * 100;
+    @return #{$vw-value}vw;
+  }
+}
+
+@function min-px-to-vw($pixels, $device: 'chromebook') {
+  @return max(px-to-vw($pixels, $device), #{$pixels}px);
+}
+
+@function min-px-to-vh($pixels, $device: 'chromebook') {
+  @return max(px-to-vh($pixels, $device), #{$pixels}px);
+}
+

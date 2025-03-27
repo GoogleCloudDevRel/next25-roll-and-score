@@ -1,0 +1,49 @@
+<template>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="56"
+    height="57"
+    viewBox="0 0 56 57"
+    fill="none"
+  >
+    <rect
+      x="1.165"
+      y="1.70406"
+      width="53.67"
+      height="53.67"
+      rx="26.835"
+      fill="url(#paint0_linear_907_84)"
+    />
+    <rect
+      x="1.165"
+      y="1.70406"
+      width="53.67"
+      height="53.67"
+      rx="26.835"
+      stroke="url(#paint1_linear_907_84)"
+      stroke-width="2.33"
+    />
+    <mask
+      id="mask0_907_84"
+      style="mask-type: alpha"
+      maskUnits="userSpaceOnUse"
+      x="0"
+      y="0"
+      width="56"
+      height="57"
+    >
+      <rect
+        y="0.539062"
+        width="56"
+        height="56"
+        fill="#D9D9D9"
+      />
+    </mask>
+    <g mask="url(#mask0_907_84)">
+      <path
+        d="M15 40.7492V16.3281L44 28.5387L15 40.7492ZM17.2895 37.2005L38.0474 28.5387L17.2895 19.7623V26.1729L26.5237 28.5387L17.2895 30.8281V37.2005Z"
+        fill="currentColor"
+      />
+    </g>
+  </svg>
+</template>
