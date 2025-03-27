@@ -16,3 +16,13 @@ LICENSE
 .env.*
 
 firebaseConfigProd.js
+node_modules/
+dist/
+
+.git/
+.github/
+
+*.log
+
+.env
+.env.*
