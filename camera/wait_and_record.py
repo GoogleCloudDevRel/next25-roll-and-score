@@ -32,16 +32,16 @@ def process_message(message: pubsub_v1.subscriber.message.Message):
         data = json.loads(message.data.decode("utf-8"))
         print(f"Received message: {data}")
 
-        if data["commend"] == "start-streaming":
+        if data["commend"] == "start-recording":
             if not streaming_active:
-                print("Starting streaming...")
+                print("Starting recording...")
                 streaming_active = True
                 stop_video_thread.clear()  # Ensure the thread is not stopped
                 start_video_thread()
 
-        elif data["commend"] == "stop-streaming":
+        elif data["commend"] == "stop-recording":
             if streaming_active:
-                print("Stopping streaming...")
+                print("Stopping recording...")
                 streaming_active = False
                 stop_video_thread.set()  # Signal the thread to stop
                 if video_writer:
