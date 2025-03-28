@@ -21,6 +21,10 @@ FS_COLLECTION_NAME = os.environ["FS_COLLECTION_NAME"]
 FIRESTORE_SERVICE = FirestoreService(FS_DATABASE_ID)
 PUBSUB_SERVICE = PubSubService()
 
+@api_blueprint.route("/health", methods=['GET'])
+def health():
+    return jsonify({"status": "OK"}), 200
+
 
 @api_blueprint.route("/start_game", methods=['POST'])
 def start_game():
