@@ -16,6 +16,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 if __name__ == '__main__':
     app.run(
         debug=os.environ.get('DEBUG', False),
-        host='0.0.0.0',
-        port=8080
+        host=os.environ.get('HOST', '0.0.0.0'),
+        port=int(os.environ.get('PORT', 5000))
     )
