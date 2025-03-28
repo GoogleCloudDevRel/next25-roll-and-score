@@ -7,6 +7,8 @@ PROJECT_ID="next-25-roll-and-score"
 REGION="us-central1"
 REPOSITORY="roll-and-score-artifact-repo"
 SERVICE_NAME="roll-and-score-backend"
+FS_DATABASE_ID="roll-and-score"
+FS_COLLECTION_NAME="game-sessions"
 
 # Build the Docker image
 echo "Building Docker image..."
@@ -33,6 +35,7 @@ gcloud run deploy "$SERVICE_NAME" \
     --platform managed \
     --cpu 2 \
     --memory 4Gi \
+    --set-env-vars GC_PROJECT_ID="$PROJECT_ID",FS_DATABASE_ID="$FS_DATABASE_ID",FS_COLLECTION_NAME="$FS_COLLECTION_NAME" \
     --allow-unauthenticated
 
 echo "Deployment task is finished!"
