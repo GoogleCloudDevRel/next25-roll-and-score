@@ -14,7 +14,7 @@ export const saveEndGame = async () => {
     endTime: new Date(),
     totalScore: gameData.data().scores.reduce((acc, curr) => acc + curr, 0)
   })
-  const station = doc(collection(db, 'gameStations'), `station0${scoreStore.device}`)
+  const station = doc(collection(db, 'game-stations'), `station0${scoreStore.device}`)
   await updateDoc(station, {
     isRunning: false,
     gameId: null,
@@ -199,7 +199,6 @@ export const subscribeToHighlightsChanges = async () => {
       scores.push(doc.data().totalScore);
     })
     console.log(scores)
-
     highlightsStore.setScores(scores)
   })
 

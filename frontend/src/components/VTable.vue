@@ -67,6 +67,13 @@ const formatValue = (item, header) => {
   padding: 12px 16px; /* Adjusted padding */
   text-align: left;
 }
+.v-table th {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.v-table tr {
+  height: 65px;
+}
 
 .v-table tbody tr:nth-child(even) {
   background-color: rgba(0, 0, 0, 0.075); /* Add alternating row colors */

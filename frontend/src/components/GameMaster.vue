@@ -17,39 +17,36 @@
       ref="dashboard"
     >
       <div
-        v-for="station in gameStations"
-        :key="station.stationID"
-        :class="'block station' + station.stationID"
+        :class="'block station' + stationId"
         ref="blocks"
       >
         <div class="station-header">
           <VText
-            :text="'Station ' + station.stationID"
+            :text="'Station ' + stationId"
             variant="bold-48"
           />
           <div class="station-header-buttons">
             <VButton
               textVariant="bold-24"
-              :text="station.isRunning ? 'Running' : 'Start Game'"
-              :backgroundColor="station.isRunning ? 'grey' : 'green'"
-              :disabled="station.isRunning"
-              @click="toggleStatus(station.stationID)"
+              :text="isRunning ? 'Running' : 'Start Game'"
+              :backgroundColor="isRunning ? 'grey' : 'green'"
+              :disabled="isRunning"
+              @click="startGame(stationId)"
             />
             <VButton
               textVariant="bold-24"
               text="Cancel Game"
-              :backgroundColor="station.isRunning ? 'red' : 'grey'"
-              :disabled="!station.isRunning"
-              @click="toggleStatus(station.stationID)"
+              :backgroundColor="isRunning ? 'red' : 'grey'"
+              :disabled="!isRunning"
+              @click="cancelGame(stationId, gameId)"
             />
           </div>
         </div>
         <div class="station-table">
           <VTable
             :headers="tableHeaders"
-            :items="station.tableData"
+            :items="tableData"
             :formatters="formatters"
-            primaryKey="userId"
           />
         </div>
       </div>
@@ -58,23 +55,25 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, reactive } from 'vue'
+import BackgroundBase from './background/BackgroundBase.vue'
+import BackgroundRings from './background/BackgroundRings.vue'
 import IconGoogle from './icons/IconGoogle.vue'
 import VButton from './VButton.vue'
 import VText from './VText.vue'
-import { gsap } from '@/utils/gsap'
-import BackgroundBase from './background/BackgroundBase.vue'
-import BackgroundRings from './background/BackgroundRings.vue'
-import { doc, updateDoc, onSnapshot, collection, addDoc, query, orderBy } from 'firebase/firestore'
-import { db } from '@/config/firebaseConfig'
 import VTable from './VTable.vue'
-import { waitFor } from '@/utils/deferred'
+
+import { onMounted, onUnmounted, ref } from 'vue'
+import { db } from '@/config/firebaseConfig'
+import { doc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore'
+// import { waitFor } from '@/utils/deferred'
+import { gsap } from '@/utils/gsap'
+import { getQueryParam } from '@/utils/get-query-param'
 
 const tableHeaders = [
-  // { key: 'stationID', label: 'Station ID' },
+  // { key: 'stationId', label: 'Station ID' },
   { key: 'startTime', label: 'Start Time' },
   { key: 'endTime', label: 'End Time' },
-  // { key: 'gameStatus', label: 'Game Status' },
+  { key: 'gameStatus', label: 'Game Status' },
   { key: 'analysisURL', label: 'View Analysis' },
 ]
 
@@ -88,20 +87,14 @@ const formatters = {
 // Controllers
 // ===================================================
 
-const gameStations = reactive([
-  {
-    stationID: '01',
-    isRunning: false,
-    gameId: null,
-    tableData: [],
-  },
-  {
-    stationID: '02',
-    isRunning: false,
-    gameId: null,
-    tableData: [],
-  },
-])
+const apiUrl = 'http://localhost:5000'
+
+const device = getQueryParam('device', false) || '1'
+const stationId = device.padStart(2, '0')
+const isRunning = ref(false)
+const gameId = ref(null)
+const tableData = ref([])
+
 const unsubscribeListeners = {} // Store unsubscribe functions
 
 onMounted(async () => {
@@ -116,27 +109,23 @@ onUnmounted(() => {
 })
 
 const setupTableData = () => {
-  const gamesCollection = collection(db, 'games')
-  const q = query(gamesCollection, orderBy('startTime', 'desc'))
-  unsubscribeListeners['games'] = onSnapshot(q, (snapshot) => {
-    gameStations.forEach((station) => {
-      station.tableData = []
-    })
+  const gamesCollection = collection(db, 'game-sessions')
+  const q = query(gamesCollection, orderBy('startDateTime', 'desc'), limit(50))
+  unsubscribeListeners['game-sessions'] = onSnapshot(q, (snapshot) => {
+    tableData.value = [] // Reset the array
+
     snapshot.docs.forEach((doc) => {
       const data = doc.data()
-      if (data.gameStatus === 'cancelled') return
-      const stationID = data.stationId
-      const existingStation = gameStations.find((s) => `station${s.stationID}` === stationID)
-      if (existingStation) {
-        existingStation.tableData.push({
-          stationID: data.stationId,
-          startTime: data.startTime.toDate().toLocaleTimeString(),
-          endTime: data.endTime ? data.endTime.toDate().toLocaleTimeString() : null,
+      // if (data.gameStatus === 'Cancelled') return
+      if (data.stationId === stationId) {
+        tableData.value.push({
+          startTime: data.startDateTime.toDate().toLocaleTimeString(),
+          endTime: data.endDateTime ? data.endDateTime.toDate().toLocaleTimeString() : null,
           gameStatus: data.gameStatus,
           analysisURL:
-            data.gameStatus === 'cancelled' || data.gameStatus === 'playing'
-              ? null
-              : `${window.location.origin}/?gameId=${doc.id}#/chromebook`,
+            data.gameStatus === 'Completed'
+              ? `${window.location.origin}/?gameId=${doc.id}#/chromebook`
+              : null,
         })
       }
     })
@@ -144,77 +133,62 @@ const setupTableData = () => {
 }
 
 const setupListeners = () => {
-  const stationIDs = ['01', '02']
-  stationIDs.forEach((stationID) => {
-    const docRef = doc(db, 'gameStations', `station${stationID}`)
-    unsubscribeListeners[stationID] = onSnapshot(
-      docRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          const existingStation = gameStations.find((s) => s.stationID === stationID)
-          if (existingStation) {
-            existingStation.isRunning = data.isRunning || false
-            existingStation.gameId = data.gameId || null
-          } else {
-            gameStations.push({
-              stationID: stationID,
-              isRunning: data.isRunning || false,
-              gameId: data.gameId || null,
-            })
-          }
-        } else {
-          console.log(`Station ${stationID} document not found.`)
-          // Handle document absence
-          gameStations.push({
-            stationID: stationID,
-            isRunning: false,
-            gameId: null,
-          })
-        }
-      },
-      (error) => {
-        console.error(`Error listening to station ${stationID}:`, error)
-      },
-    )
-  })
+  const docRef = doc(db, 'game-stations', `station${stationId}`)
+  unsubscribeListeners[`station${stationId}`] = onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data()
+        isRunning.value = data.isRunning || false
+        gameId.value = data.gameId || null
+      } else {
+        console.log(`Station ${stationId} document not found.`)
+      }
+    },
+    (error) => {
+      console.error(`Error listening to station ${stationId}:`, error)
+    },
+  )
 }
 
-const toggleStatus = async (stationID) => {
-  const station = gameStations.find((s) => s.stationID === stationID)
-  if (station) {
-    station.isRunning = !station.isRunning
-    try {
-      const gamesCollection = collection(db, 'games')
-      if (station.isRunning) {
-        const newGame = await addDoc(gamesCollection, {
-          endTime: null,
-          startTime: new Date(),
-          gameStatus: 'playing',
-          stationId: `station${stationID}`,
-          scores: [],
-          totalScore: 0,
-        })
-        station.gameId = newGame.id
-      } else {
-        const gameRef = doc(gamesCollection, station.gameId)
-        await updateDoc(gameRef, {
-          endTime: new Date(),
-          gameStatus: 'cancelled',
-        })
-      }
+const startGame = async (stationId) => {
+  console.log(`Starting game for Station ${stationId}`)
+  try {
+    const response = await fetch(`${apiUrl}/api/start_game`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        stationId: stationId,
+      }),
+    })
 
-      const docRef = doc(db, 'gameStations', `station${stationID}`)
-      await updateDoc(docRef, {
-        isRunning: station.isRunning,
-        gameId: station.isRunning ? station.gameId : null,
-      })
+    const data = await response.json()
+    gameId.value = data.gameId
+    console.log('Game started successfully:', data.gameId)
+  } catch (error) {
+    console.error('Error creating game:', error)
+  }
+}
 
-      console.log(`Station ${stationID} status updated in Firestore.`)
-    } catch (error) {
-      console.error(`Error updating station ${stationID} status:`, error)
-      station.isRunning = !station.isRunning
-    }
+const cancelGame = async (stationId, gameId) => {
+  console.log(`Cancelling game ${gameId} for Station ${stationId}`)
+  try {
+    const response = await fetch(`${apiUrl}/api/cancel_game`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        stationId: stationId,
+        gameId: gameId,
+      }),
+    })
+    const data = await response.json()
+    console.log(`Game ${gameId} cancelled successfully:`, data)
+  } catch (error) {
+    console.error(`Error cancelling game: ${gameId} for Station ${stationId}`, error)
   }
 }
 
@@ -232,7 +206,7 @@ async function animateSet() {
 }
 
 async function animateIn() {
-  await waitFor(() => gameStations.some((s) => s.tableData.length > 0))
+  // await waitFor(() => tableData.length > 0)
   gsap.to(blocks.value, {
     clipPath: 'inset(-5% round 25px)',
     duration: 1.2,
@@ -286,7 +260,7 @@ defineExpose({
 
 .dashboard {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  // grid-template-columns: 1fr 1fr;
   gap: px-to-vw(18);
   width: 100%;
   height: calc(100vh - 150px);
