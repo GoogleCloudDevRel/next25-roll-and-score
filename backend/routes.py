@@ -37,7 +37,7 @@ def start_game():
         game_session_data = {
             "scores": [],
             "totalScore": 0,
-            "gameStatus": "starting",
+            "gameStatus": "Starting",
             "startDateTime": now,
             "endDateTime": None,
             "stationId": station_id
@@ -50,7 +50,7 @@ def start_game():
 
         # Send start recording message to camera modules (Pub/Sub)
         if game_id:
-            topic_id = f"station{station_id:02d}"
+            topic_id = f"station{station_id}"
             message = {
                 "command": "start-recording",
                 "gameId": game_id,
@@ -60,33 +60,33 @@ def start_game():
         return jsonify({'gameId': game_id})
 
 
-@api_blueprint.route("/end_game", methods=['POST'])
-def end_game():
+@api_blueprint.route("/cancel_game", methods=['POST'])
+def cancel_game():
     if request.method == 'POST':
         received_data = request.get_json()
         station_id = received_data['stationId']
         game_id = received_data['gameId']
 
-        # Send stop recording message to camera modules (Pub/Sub)
-        topic_id = f"station{station_id:02d}"
+        # Update gameStatus as "cancelling" in the game sessions database (Firestore)
+        field_name = "gameStatus"
+        field_value = "Cancelling"
+        FIRESTORE_SERVICE.update_field(
+            collection_name=FS_COLLECTION_NAME,
+            document_id=game_id,
+            field_name=field_name,
+            field_value=field_value
+        )
+
+        # Send cancel recording message to camera modules (Pub/Sub)
+        topic_id = f"station{station_id}"
         message = {
-            "command": "stop-recording",
+            "command": "cancel-recording",
             "gameId": game_id,
         }
         PUBSUB_SERVICE.publish_message(
             project_id=GC_PROJECT_ID,
             topic_id=topic_id,
             message=message
-        )
-
-        # Update gameStatus as "cancelled" in the game sessions database (Firestore)
-        field_name = "gameStatus"
-        field_value = "stopping"
-        FIRESTORE_SERVICE.update_field(
-            collection_name=FS_COLLECTION_NAME,
-            document_id=game_id,
-            field_name=field_name,
-            field_value=field_value
         )
 
         return jsonify({"gameId": game_id, field_name: field_value})

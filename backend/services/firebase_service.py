@@ -47,15 +47,15 @@ class FirestoreService:
                 if document_id:
                     doc_ref = self.db.collection(collection_name).document(document_id)
                     doc_ref.set(data)
-                    logger.info(f"Document {document_id} exists in {collection_name}. Updated it with data: {data}.")
+                    logger.info(f"Document: {document_id} exists in collection: {collection_name}. Updated it with data: {data}.")
                     return document_id
                 else:
                     doc_ref = self.db.collection(collection_name).document()
                     doc_ref.set(data)
-                    logger.info(f"Created a new document {doc_ref.id} in {collection_name} with data: {data}")
+                    logger.info(f"Created a new document: {doc_ref.id} in collection: {collection_name} with data: {data}")
                     return doc_ref.id
             except Exception as e:
-                logger.error(f"Unable to create a new document in {collection_name}. Error: {e}")
+                logger.error(f"Unable to create a new document in collection: {collection_name}. Error: {e}")
                 raise e
         else:
             raise Exception("Firestore not initialized")
