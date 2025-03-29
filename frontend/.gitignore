@@ -30,11 +30,14 @@ coverage
 *storybook.log
 
 Build
+build
 storybook-static
 .vite
 
+# Environment variables
 .env
 .env.*
 !.env.template
 
-firebaseConfigProd.js
+# Firebase files and folders
+.firebase/
