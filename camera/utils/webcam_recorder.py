@@ -120,7 +120,9 @@ class WebcamRecorder:
         log.info(f"Stopped cam {self.webcam_id}. File: {self.output_file_original}")
         if self.processor:
             log.info(f"Stopped cam {self.webcam_id}. File: {self.output_file_annotated}")
-        return self.output_file_original, self.output_file_annotated
+            return (self.output_file_original, self.output_file_annotated)
+
+        return self.output_file_original, None
 
     def _release(self):
         """Releases OpenCV capture and writer."""

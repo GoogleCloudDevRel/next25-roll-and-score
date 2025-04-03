@@ -1,25 +1,23 @@
-import time
-import datetime
+import json
 import logging
 import os
 import signal
 import sys
 import threading
-import re
-import json
+import time
 from typing import Optional, Dict
 
-# --- Google Cloud Imports ---
-from google.cloud import pubsub_v1, storage
-from google.cloud.exceptions import NotFound, Conflict, GoogleCloudError
-from google.auth.exceptions import DefaultCredentialsError
-
 import config as cfg
+from services.firestore_updater import FirestoreUpdater
+from services.gcs_uploader import GCSUploader
+from services.gemini_coach import GeminiCoach
 from services.pubsub_listener import PubSubListener
 from services.pubsub_publisher import PubSubPublisher
-from services.gcs_uploader import GCSUploader
-from utils.webcam_recorder import WebcamRecorder
 from utils.processing_pipelines import get_processor, ScoreEvent
+from utils.resources_checker import ensure_gcp_resources
+from utils.webcam_recorder import WebcamRecorder
+
+from google.cloud import firestore
 
 log = logging.getLogger(__name__)
 
@@ -29,127 +27,71 @@ class MainController:
 
     def __init__(self):
         self.recorders: Dict[int, WebcamRecorder] = {}
-        self.uploader: Optional[GCSUploader] = None
-        self.listener: Optional[PubSubListener] = None
-        self.publisher: Optional[PubSubPublisher] = None
+        self.gcs_uploader: Optional[GCSUploader] = None
+        self.pubsub_listener: Optional[PubSubListener] = None
+        self.pubsub_publisher: Optional[PubSubPublisher] = None
+        self.firestore_updater: Optional[FirestoreUpdater] = None
+        self.gemini_coach: Optional[GeminiCoach] = None
         self._is_rec = False
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self.game_id: Optional[str] = None
+        self.round_number: int = 1
+        self.scores_from_all_rounds: list[int] = []
         self.score_count: int = 0
         self._initialize_components()
-
-    def _check_gc_resources(self):
-        """Checks for and creates necessary GCP resources if they don't exist."""
-        log.info("----- Checking required GCP resources -----")
-        project_id = cfg.GOOGLE_CLOUD_PROJECT_ID
-        topic_id = cfg.PUBSUB_TOPIC_ID
-        subscription_id = cfg.PUBSUB_SUBSCRIPTION_ID
-        bucket_name = cfg.GCS_BUCKET_NAME
-        bucket_location = getattr(cfg, 'GOOGLE_CLOUD_REGION', 'US')  # Default to US if not set
-
-        # --- Check/Create GCS Bucket ---
-        try:
-            storage_client = storage.Client(project=project_id)
-            try:
-                storage_client.get_bucket(bucket_name)
-                log.info(f"GCS Bucket '{bucket_name}' already exists. No action needed.")
-            except NotFound:
-                log.warning(
-                    f"GCS Bucket '{bucket_name}' not found. Attempting to create in location '{bucket_location}'...")
-                try:
-                    storage_client.create_bucket(bucket_name, location=bucket_location)
-                    log.info(f"Successfully created GCS Bucket '{bucket_name}'.")
-                except Conflict:
-                    log.warning(f"GCS Bucket '{bucket_name}' already exists (likely created recently).")
-                except GoogleCloudError as e:
-                    log.error(f"Failed to create GCS bucket '{bucket_name}': {e}. Check permissions (Storage Admin?).")
-                    raise RuntimeError(f"Bucket creation failed: {e}") from e
-        except DefaultCredentialsError as e:
-            log.critical(f"GCS Authentication error: {e}")
-            raise RuntimeError("GCS Authentication failed") from e
-        except Exception as e:
-            log.critical(f"Unexpected error checking/creating GCS bucket: {e}", exc_info=True)
-            raise
-
-        # --- Check/Create Pub/Sub Topic ---
-        topic_path = None
-        try:
-            publisher_client = pubsub_v1.PublisherClient()
-            topic_path = publisher_client.topic_path(project_id, topic_id)
-            try:
-                publisher_client.get_topic(request={"topic": topic_path})
-                log.info(f"Pub/Sub Topic '{topic_id}' already exists. No action needed.")
-            except NotFound:
-                log.warning(f"Pub/Sub Topic '{topic_id}' not found. Attempting to create...")
-                try:
-                    publisher_client.create_topic(request={"name": topic_path})
-                    log.info(f"Successfully created Pub/Sub Topic '{topic_id}'.")
-                except Conflict:
-                    log.warning(f"Pub/Sub Topic '{topic_id}' already exists (likely created recently).")
-                except GoogleCloudError as e:
-                    log.error(f"Failed to create Pub/Sub topic '{topic_id}': {e}. Check permissions (Pub/Sub Admin?).")
-                    raise RuntimeError(f"Topic creation failed: {e}") from e
-        except DefaultCredentialsError as e:
-            log.critical(f"Pub/Sub Authentication error: {e}")
-            raise RuntimeError("Pub/Sub Authentication failed") from e
-        except Exception as e:
-            log.critical(f"Unexpected error checking/creating Pub/Sub topic: {e}", exc_info=True)
-            raise
-
-        # --- Check/Create Pub/Sub Subscription ---
-        if not topic_path:  # Ensure topic path was determined
-            raise RuntimeError("Cannot proceed without a valid Pub/Sub topic path.")
-        try:
-            subscriber_client = pubsub_v1.SubscriberClient()
-            subscription_path = subscriber_client.subscription_path(project_id, subscription_id)
-            try:
-                subscriber_client.get_subscription(request={"subscription": subscription_path})
-                log.info(f"Pub/Sub Subscription '{subscription_id}' already exists. No action needed.")
-            except NotFound:
-                log.warning(
-                    f"Pub/Sub Subscription '{subscription_id}' not found. Attempting to create for topic '{topic_id}'...")
-                try:
-                    # Default ack deadline is 10s, adjust if needed
-                    subscriber_client.create_subscription(request={
-                        "name": subscription_path,
-                        "topic": topic_path,
-                        # "ack_deadline_seconds": 60, # Optional: customize
-                    })
-                    log.info(f"Successfully created Pub/Sub Subscription '{subscription_id}'.")
-                except Conflict:
-                    log.warning(f"Pub/Sub Subscription '{subscription_id}' already exists (likely created recently).")
-                except GoogleCloudError as e:
-                    log.error(
-                        f"Failed to create subscription '{subscription_id}': {e}. "
-                        f"Check permissions (Pub/Sub Admin?) and ensure topic exists.")
-                    raise RuntimeError(f"Subscription creation failed: {e}") from e
-        except DefaultCredentialsError as e:
-            log.critical(f"Pub/Sub Authentication error: {e}")
-            raise RuntimeError("Pub/Sub Authentication failed") from e
-        except Exception as e:
-            log.critical(f"Unexpected error checking/creating Pub/Sub subscription: {e}", exc_info=True)
-            raise
-
-        log.info("----- GCP resource check/creation complete. -----")
 
     def _initialize_components(self):
         """Initializes components after ensuring resources exist."""
         log.info("Initializing components...")
         try:
-            if cfg.CHECK_GOOGLE_CLOUD_RESOURCES:
-                self._check_gc_resources()
+            if cfg.ENSURE_RESOURCES:
+                ensure_gcp_resources(
+                    project_id=cfg.GOOGLE_CLOUD_PROJECT_ID,
+                    topic_id=cfg.PUBSUB_TOPIC_ID,
+                    subscription_id=cfg.PUBSUB_SUBSCRIPTION_ID,
+                    bucket_name=cfg.GCS_BUCKET_NAME,
+                    bucket_location=getattr(cfg, 'GOOGLE_CLOUD_REGION', 'US'),
+                    database_id=cfg.FIRESTORE_DATABASE_ID
+                )
 
-            self.uploader = GCSUploader(cfg.GCS_BUCKET_NAME)
-            if not self.uploader.is_ready():  # Should be ready now, but double-check
+            # --- Initialize GCS Uploader ---
+            self.gcs_uploader = GCSUploader(cfg.GCS_BUCKET_NAME)
+            if not self.gcs_uploader.is_ready():  # Should be ready now, but double-check
                 raise RuntimeError("GCS Uploader failed post-check.")
 
-            self.publisher = PubSubPublisher(cfg.GOOGLE_CLOUD_PROJECT_ID, cfg.PUBSUB_TOPIC_ID)
-            if not self.publisher.is_ready():
+            # --- Initialize PubSub Publisher ---
+            self.pubsub_publisher = PubSubPublisher(cfg.GOOGLE_CLOUD_PROJECT_ID, cfg.PUBSUB_TOPIC_ID)
+            if not self.pubsub_publisher.is_ready():
                 # This might still fail if permissions are only for create, not use
                 log.warning("Pub/Sub Publisher check failed post-creation attempt.")
 
-            # Create Recorders
+            # --- Initialize PubSub Listener ---
+            self.pubsub_listener = PubSubListener(
+                cfg.GOOGLE_CLOUD_PROJECT_ID,
+                cfg.PUBSUB_SUBSCRIPTION_ID,
+                self.handle_msg)
+            if not self.pubsub_listener.is_ready():
+                raise RuntimeError("Pub/Sub Listener failed post-check.")
+
+            # --- Initialize Firestore Updater ---
+            self.firestore_updater = FirestoreUpdater(
+                project_id=cfg.GOOGLE_CLOUD_PROJECT_ID,
+                database_id=cfg.FIRESTORE_DATABASE_ID
+            )
+            if not self.firestore_updater.is_ready():
+                raise RuntimeError("Firestore updater failed post-check.")
+
+            # --- Initialize Gemini Coach ---
+            self.gemini_coach = GeminiCoach(
+                project_id=cfg.GOOGLE_CLOUD_PROJECT_ID,
+                location=cfg.GOOGLE_CLOUD_REGION,
+                model_id=cfg.GEMINI_MODEL_ID,
+                system_instruction=cfg.GEMINI_SYSTEM_INSTRUCTION,
+                prompt_template=cfg.GEMINI_PROMPT_TEMPLATE
+            )
+
+            #  --- Create Recorders ---
             for conf in cfg.WEBCAM_CONFIGS:
                 source = conf.get("source")
                 output_filename = conf.get("output_filename")
@@ -160,10 +102,6 @@ class MainController:
                                                         cfg.VIDEO_RESOLUTION, processor=proc)
                 log.info(f"Initialized recorder {source} with (Processor: {key or 'None'})")
 
-            self.listener = PubSubListener(cfg.GOOGLE_CLOUD_PROJECT_ID, cfg.PUBSUB_SUBSCRIPTION_ID, self.handle_msg)
-            if not self.listener.is_ready():
-                raise RuntimeError("Pub/Sub Listener failed post-check.")
-
             log.info("All components initialized successfully.")
 
         except Exception as e:  # Catch errors from resource creation or component init
@@ -172,21 +110,32 @@ class MainController:
 
     def _on_score(self, score_details: ScoreEvent):
         """Callback triggered by processor on score detection."""
-        with self._lock:
+        with (self._lock):
             if not self._is_rec or self.game_id is None: return
             self.score_count += 1
             _, score_val, hole_id = score_details
             log.info(
                 f"SCORE: Game='{self.game_id}', Count={self.score_count}/{cfg.SCORES_PER_GAME_SESSION} (+{score_val})")
-            if self.score_count >= cfg.SCORES_PER_GAME_SESSION:
-                log.info(f"Score limit per round ({cfg.SCORES_PER_GAME_SESSION} scores) reached for '{self.game_id}'.")
-                self._stop_rec(self.game_id, reason="Round End")
-                # if self.publisher and self.publisher.is_ready():
-                #     threading.Thread(target=self.publisher.publish_message,
-                #                      args=(b'{"command": "stop-recording", "reason": "round_end"}',),
-                #                      kwargs={'game_id': self.game_id}, daemon=True).start()
-                # else:
-                #     log.warning("Cannot publish stop: Publisher not ready.")
+            if self.score_count <= cfg.SCORES_PER_GAME_SESSION:
+                self.scores_from_all_rounds.append(score_val)
+
+                # Update score to the firestore to display
+                self._update_game_session(
+                    field_updates={
+                        "scores": self.scores_from_all_rounds,
+                        "totalScore": sum(self.scores_from_all_rounds)
+                    }
+                )
+
+            if self.score_count == cfg.SCORES_PER_GAME_SESSION:
+                log.info(f"Score limit per round ({cfg.SCORES_PER_GAME_SESSION} scores) reached for '{self.game_id}'. "
+                         f"Ending this round...")
+                if self.pubsub_publisher and self.pubsub_publisher.is_ready():
+                    threading.Thread(target=self.pubsub_publisher.publish_message,
+                                     args=(b'{"command": "stop-recording", "reason": "round-end"}',),
+                                     kwargs={'game_id': self.game_id}, daemon=True).start()
+                else:
+                    log.warning("Cannot publish stop: Publisher not ready.")
 
     def handle_msg(self, msg_data: str):
         """Handles incoming Pub/Sub commands (expects JSON)."""
@@ -194,12 +143,65 @@ class MainController:
             data = json.loads(msg_data)
             command = data.get("command").lower()
             game_id = data.get("gameId")
-            reason = data.get("reason")
+            reason = data.get("reason").lower().strip().replace(' ', '-')
+            round_number = int(data.get("round", 1))
 
             if command == "start-recording":
-                self._start_rec(game_id, reason)
+                code = self._start_rec(game_id, reason)
+                if code != -1:
+                    if round_number == 1: self.scores_from_all_rounds = []
+                    self.round_number = round_number
+                    self._update_station_info(field_updates={
+                        "gameId": game_id,
+                        "isRunning": True
+                    })
+                    self._update_game_session(field_updates={
+                        "gameStatus": "inProgress",
+                    })
+
             elif command == "stop-recording":
-                self._stop_rec(game_id, reason)
+                recorded_files = self._stop_rec(reason)
+
+                if reason != "cancellation":
+                    gcs_video_uri_list = self._upload_files(recorded_files[:1], upload_async=False)
+                    lane_view_video_uri = gcs_video_uri_list[0]
+
+                    # Update replayVideo field
+                    public_video_url = lane_view_video_uri.replace("gs://", "https://storage.googleapis.com/")
+                    self._update_station_info(field_updates={"replayVideo": public_video_url})
+
+                    # Update geminiFeedback field
+                    gemini_feedback = self.gemini_coach.generate_feedback(lane_view_video_uri)
+                    self._update_station_info(field_updates={"geminiFeedback": gemini_feedback})
+
+                    # Add video with feedback and game status to game-sessions collection
+                    new_vid_with_feedback = {"video": public_video_url, "feedback": gemini_feedback}
+                    if self.round_number < cfg.TOTAL_NUMBER_OF_ROUNDS:
+                        self._update_game_session(field_updates={
+                            "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
+                        })
+                    else:
+                        self._update_game_session(field_updates={
+                            "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
+                            "gameStatus": "completed"
+                        })
+
+                    # Upload remaining files async
+                    self._upload_files(recorded_files[1:])
+
+                    # Update isRunning field
+                    self._update_station_info(field_updates={"isRunning": False})
+                else:
+                    self._update_station_info(field_updates={
+                        "gameId": "",
+                        "replayVideo": "",
+                        "geminiFeedback": "",
+                        "isRunning": False,
+                    })
+
+                    self._update_game_session(field_updates={"gameStatus": "cancelled"})
+
+
             else:
                 log.warning(f"Unrecognized command: '{command}' in received message: {data}.")
 
@@ -213,7 +215,8 @@ class MainController:
 
         with self._lock:
             if self._is_rec:
-                return log.warning(f"Already recording '{self.game_id}', ignoring start for '{game_id}'.")
+                log.warning(f"Already recording '{self.game_id}', ignoring start for '{game_id}'.")
+                return -1
             self._is_rec = True
             self.game_id = game_id
             self.score_count = 0
@@ -228,16 +231,16 @@ class MainController:
                 log.error(f"Failed start cam {cid}")
         log.info(f"Started {started}/{len(self.recorders)} recorders.")
         if started == 0 and self.recorders:
-            with self._lock: self._is_rec = False; self.game_id = None
+            with self._lock: self._is_rec = False
 
-    def _stop_rec(self, game_id: str, reason: str = "unknown"):
+    def _stop_rec(self, reason: str = "unknown"):
         """Stops recording session."""
         with self._lock:
             if not self._is_rec: return
             log.info(f"STOPPING Recording Session: GameID='{self.game_id}' - (Reason: {reason})")
             self._is_rec = False
-            game_id_stopped = self.game_id
-            self.game_id = None
+            # game_id_stopped = self.game_id
+            # self.game_id = None
             self.score_count = 0
 
         stopped_files = []
@@ -248,25 +251,78 @@ class MainController:
                 if original: stopped_files.append(original)
                 if annotated: stopped_files.append(annotated)
 
-                try:  # Get summary
-                    proc = rec.get_processor()
-                    summ = proc.get_summary() if proc and hasattr(proc, 'get_summary') else None
-                    if summ: summaries[cid] = summ
-                except Exception as e:
-                    log.error(f"Summary error cam {cid}: {e}")
+                # try:  # Get summary
+                #     proc = rec.get_processor()
+                #     summ = proc.get_summary() if proc and hasattr(proc, 'get_summary') else None
+                #     if summ: summaries[cid] = summ
+                # except Exception as e:
+                #     log.error(f"Summary error cam {cid}: {e}")
+        log.info(f"Stopped recorders for game '{self.game_id}'.")
+        return stopped_files
 
-        log.info(f"Stopped recorders for game '{game_id_stopped}'.")
+    def _upload_files(self, files_to_upload: list[str],
+                      delete_local: bool = cfg.DELETE_LOCAL_RECORDINGS, upload_async: bool = True):
+        gcs_video_uri_list = []
+        if self.gcs_uploader and self.gcs_uploader.is_ready():
+            log.info(f"Queueing {len(files_to_upload)} files for upload...")
+            for file_path in files_to_upload:
+                filename, file_extension = os.path.splitext(os.path.basename(file_path))
+                # new_filename = f"{filename}_round{self.round_number}{file_extension}"
+                new_filename = os.path.basename(file_path)
 
-        # Upload
-        if stopped_files and self.uploader and self.uploader.is_ready():
-            log.info(f"Queueing {len(stopped_files)} files for upload...")
-            safe_gid_path = re.sub(r'[\\/*?:"<>|]', "_", game_id_stopped or "no_id")
-            for file_path in stopped_files:
-                blob_name = f"recordings/game_{safe_gid_path}/{os.path.basename(file_path)}"
-                # self.uploader.upload_async(file_path, blob_name, game_id, delete_local=False)
+                blob_name = f"game_{self.game_id}/{new_filename}"
+                # if upload_async:
+                #     self.gcs_uploader.upload_async(file_path, blob_name, delete_local=delete_local)
+                # else:
+                #     self.gcs_uploader.upload_async(file_path, blob_name, delete_local=delete_local)
 
-        # Print Summaries
-        log.info(f"----- Summary: GameID: {game_id_stopped} -----")
+                gcs_video_uri = f"gs://{cfg.GCS_BUCKET_NAME}/recordings/{blob_name}"
+                gcs_video_uri_list.append(gcs_video_uri)
+
+            return gcs_video_uri_list
+        else:
+            log.error("GCS Uploader is not ready!")
+
+    def _update_game_session(self, field_updates):
+        """
+        Helper function to update the document in Firestore.
+        """
+        if self.firestore_updater and self.firestore_updater.is_ready() and self.game_id:
+            log.info(f"Attempting to update Firestore for game: '{self.game_id}'...")
+
+            # Call the method on the FirestoreUpdater instance
+            success = self.firestore_updater.update_document(
+                collection_name=cfg.GAME_SESSIONS_COLLECTION_NAME,
+                document_id=self.game_id,
+                field_updates=field_updates
+            )
+            if success:
+                log.info(f"Firestore update successful for game '{self.game_id}'.")
+            else:
+                log.error(f"Firestore update failed for game '{self.game_id}'.")
+
+    def _update_station_info(self, field_updates: dict):
+        """
+        Helper function to update the document in Firestore.
+        """
+        collection_name = cfg.STATION_INFO_COLLECTION_NAME
+        document_id = cfg.STATION_ID
+
+        if self.firestore_updater and self.firestore_updater.is_ready() and document_id:
+            log.info(f"Attempting to update Firestore Document: '{document_id}' with {field_updates}...")
+
+            success = self.firestore_updater.update_document(
+                collection_name=collection_name,
+                document_id=document_id,
+                field_updates=field_updates
+            )
+            if success:
+                log.info(f"Firestore update successful for document: '{document_id}'.")
+            else:
+                log.error(f"Firestore update failed for document: '{document_id}'.")
+
+    def _print_summary(self, summaries: dict):
+        log.info(f"----- Summary: GameID: {self.game_id} -----")
         if not summaries:
             log.info("No summaries.")
         else:
@@ -274,20 +330,20 @@ class MainController:
                 log.info(f" Cam {cid}:")
                 if isinstance(summ_data, dict) and "final_score" in summ_data:
                     log.info(f"  Score: {summ_data['final_score']}")
-                    evts = summ_data.get('scored_events', [])
-                    log.info(f"  Events ({len(evts)}): " + (
-                        ", ".join([f"+{s}({h})" for _, s, h in evts]) if evts else "None"))
+                    events = summ_data.get('scored_events', [])
+                    log.info(f"  Events ({len(events)}): " + (
+                        ", ".join([f"+{s}({h})" for _, s, h in events]) if events else "None"))
                 elif summ_data:
                     log.info(f"  {summaries}")
         log.info("-------------------------------------")
 
     def run(self):
         """Starts listener and waits for shutdown signal."""
-        if not self.listener or not self.listener.is_ready():
+        if not self.pubsub_listener or not self.pubsub_listener.is_ready():
             return log.critical("Listener not ready.")
 
         log.info("Starting Pub/Sub listener...")
-        self.listener.listen()
+        self.pubsub_listener.listen()
         log.info("Controller running. Press Ctrl+C to shutdown.")
 
         try:
@@ -304,9 +360,18 @@ class MainController:
 
         log.info("----- Shutting Down -----")
         self._stop.set()
-        if self.listener: self.listener.stop()
+        if self.pubsub_listener: self.pubsub_listener.stop()
         if self._is_rec: self._stop_rec("shutdown")
-        if self.publisher: self.publisher.close()
+        if self.pubsub_publisher: self.pubsub_publisher.close()
+
+        self._update_station_info(field_updates={
+            "gameId": "",
+            "replayVideo": "",
+            "geminiFeedback": "",
+            "isRunning": False,
+        })
+
+        time.sleep(1)
         log.info("----- Shutdown Complete -----")
 
 
@@ -314,13 +379,13 @@ class MainController:
 if __name__ == "__main__":
     controller: Optional[MainController] = None
 
+
     def handle_signal(sig, frame):
         log.warning(f"Received signal {signal.Signals(sig).name}. Shutting down...")
         if controller and not controller._stop.is_set():
             controller.shutdown()
         else:
             sys.exit(0)  # Exit directly if controller isn't running
-
 
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)

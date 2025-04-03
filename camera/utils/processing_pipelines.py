@@ -28,7 +28,7 @@ class BaseProcessor:
     def get_summary(self) -> Optional[Dict]: return None
 
 
-# --- SkeeBall Helper Functions ---
+# --- Score Tracker Helper Functions ---
 def _load_holes_config_from_json(json_path: str) -> HolesDict:
     """Loads hole configurations from JSON."""
     try:
@@ -111,7 +111,7 @@ def _get_overlapping_hole(ball_contour: np.ndarray, holes: HolesDict, frame_shap
     return None
 
 
-def _draw_skeeball_visualizations(frame: np.ndarray, holes: HolesDict, ball_contour: Optional[np.ndarray],
+def _draw_ball_visualizations(frame: np.ndarray, holes: HolesDict, ball_contour: Optional[np.ndarray],
                                   total_score: int, armed_hole_id: Optional[str]) -> None:
     """Draws overlays onto the frame."""
     h = frame.shape[0]
@@ -125,25 +125,25 @@ def _draw_skeeball_visualizations(frame: np.ndarray, holes: HolesDict, ball_cont
     cv2.putText(frame, f"Score: {total_score}", (10, h - 20), font, 0.9, text_clr, thick, cv2.LINE_AA)
 
 
-# --- SkeeBall Score Tracking Processor ---
+# --- Score Tracking Processor ---
 class ScoreTrackingProcessor(BaseProcessor):
     """Processes frames for skee-ball scoring."""
 
     def __init__(self, score_callback: Optional[Callable[[ScoreEvent], None]] = None, **kwargs):
         self.score_callback = score_callback
-        self.holes_config = _load_holes_config_from_json(cfg.SKEEBALL_SCORE_ZONES_JSON_PATH)
+        self.holes_config = _load_holes_config_from_json(cfg.SCORE_TRACKER_SCORE_ZONES_JSON_PATH)
         if not self.holes_config: raise ValueError("Hole config missing/invalid.")
         # Store config parameters
-        self.hsv_lower = cfg.SKEEBALL_LOWER_HSV
-        self.hsv_upper = cfg.SKEEBALL_UPPER_HSV
-        self.min_area = cfg.SKEEBALL_MIN_BALL_AREA
-        self.max_area = cfg.SKEEBALL_MAX_BALL_AREA
-        self.min_circ = cfg.SKEEBALL_MIN_CIRCULARITY
-        self.k_size = cfg.SKEEBALL_MORPH_KERNEL_SIZE
-        self.iters = cfg.SKEEBALL_MORPH_ITERATIONS
-        self.req_pres = cfg.SKEEBALL_REQUIRED_PRESENCE_FRAMES
-        self.timeout = cfg.SKEEBALL_SCORE_TIMEOUT_SECONDS
-        self.grace = cfg.SKEEBALL_DISAPPEARANCE_GRACE_FRAMES
+        self.hsv_lower = cfg.SCORE_TRACKER_LOWER_HSV
+        self.hsv_upper = cfg.SCORE_TRACKER_UPPER_HSV
+        self.min_area = cfg.SCORE_TRACKER_MIN_BALL_AREA
+        self.max_area = cfg.SCORE_TRACKER_MAX_BALL_AREA
+        self.min_circ = cfg.SCORE_TRACKER_MIN_CIRCULARITY
+        self.k_size = cfg.SCORE_TRACKER_MORPH_KERNEL_SIZE
+        self.iters = cfg.SCORE_TRACKER_MORPH_ITERATIONS
+        self.req_pres = cfg.SCORE_TRACKER_REQUIRED_PRESENCE_FRAMES
+        self.timeout = cfg.SCORE_TRACKER_SCORE_TIMEOUT_SECONDS
+        self.grace = cfg.SCORE_TRACKER_DISAPPEARANCE_GRACE_FRAMES
         self.reset()
 
     def reset(self):
@@ -209,8 +209,8 @@ class ScoreTrackingProcessor(BaseProcessor):
 
         # Visualize
         out_frame = frame.copy()
-        _draw_skeeball_visualizations(out_frame, self.holes_config, contour, self.total_score,
-                                      self.armed['id'] if self.armed else None)
+        _draw_ball_visualizations(out_frame, self.holes_config, contour, self.total_score,
+                                  self.armed['id'] if self.armed else None)
         return out_frame
 
     def get_summary(self) -> Optional[Dict]:

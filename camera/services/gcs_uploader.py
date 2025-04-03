@@ -20,10 +20,11 @@ class GCSUploader:
         except Exception as e:
             log.error(f"Failed to initialize GCS Uploader for '{bucket_name}': {e}")
 
-    def _upload_task(self, local_path: str, blob_name: str, game_id, delete_local: bool, make_public: bool):
+    def _upload_task(self, local_path: str, blob_name: str, delete_local: bool, make_public: bool):
         """Upload logic run in thread."""
-        if not self.bucket or not os.path.exists(local_path): return
-        gcs_video_uri = f"gs://{self.bucket_name}/{game_id}/{blob_name}"
+        if not self.bucket or not os.path.exists(local_path):
+            return
+        gcs_video_uri = f"gs://{self.bucket_name}/{blob_name}"
         log.info(f"Uploading: {local_path} -> {gcs_video_uri}")
         try:
             blob = self.bucket.blob(blob_name)
@@ -40,11 +41,18 @@ class GCSUploader:
         except Exception as e:
             log.error(f"Upload failed for {local_path}: {e}")
 
-    def upload_async(self, local_path: str, blob_name: str, game_id: str, delete_local: bool = False, make_public: bool = True):
+    def upload_async(self, local_path: str, blob_name: str, delete_local: bool = False, make_public: bool = True):
         """Starts upload in a background thread."""
-        if not self.bucket: return log.error("GCS Bucket not ready, cannot upload.")
-        threading.Thread(target=self._upload_task, args=(local_path, blob_name, game_id, delete_local, make_public),
+        if not self.bucket:
+            return log.error("GCS Bucket not ready, cannot upload.")
+        threading.Thread(target=self._upload_task, args=(local_path, blob_name, delete_local, make_public),
                          name=f"Upload-{os.path.basename(local_path)}", daemon=True).start()
+
+    def upload_file(self, local_path: str, blob_name: str, delete_local: bool = False, make_public: bool = True):
+        """Starts upload in a foreground thread."""
+        if not self.bucket:
+            return log.error("GCS Bucket not ready, cannot upload.")
+        self._upload_task(local_path, blob_name, delete_local, make_public)
 
     def is_ready(self) -> bool:
         return self.bucket is not None
