@@ -36,7 +36,7 @@ class MainController:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self.game_id: Optional[str] = None
-        self.round_number: int = 1
+        self.round_number: Optional[int] = None
         self.scores_from_all_rounds: list[int] = []
         self.score_count: int = 0
         self._initialize_components()
@@ -51,7 +51,7 @@ class MainController:
                     topic_id=cfg.PUBSUB_TOPIC_ID,
                     subscription_id=cfg.PUBSUB_SUBSCRIPTION_ID,
                     bucket_name=cfg.GCS_BUCKET_NAME,
-                    bucket_location=getattr(cfg, 'GOOGLE_CLOUD_REGION', 'US'),
+                    bucket_location=cfg.GCS_BUCKET_LOCATION,
                     database_id=cfg.FIRESTORE_DATABASE_ID
                 )
 
@@ -98,8 +98,15 @@ class MainController:
                 key = conf.get("processing_key")
                 if source is None: continue
                 proc = get_processor(key, score_callback=self._on_score)
-                self.recorders[source] = WebcamRecorder(source, cfg.OUTPUT_DIR, output_filename, cfg.VIDEO_FPS,
-                                                        cfg.VIDEO_RESOLUTION, processor=proc)
+                self.recorders[source] = WebcamRecorder(
+                    webcam_id=source,
+                    output_dir=cfg.OUTPUT_DIR,
+                    output_filename=output_filename,
+                    fps=cfg.VIDEO_FPS,
+                    resolution=cfg.VIDEO_RESOLUTION,
+                    codec=cfg.VIDEO_CODEC,
+                    processor=proc,
+                )
                 log.info(f"Initialized recorder {source} with (Processor: {key or 'None'})")
 
             log.info("All components initialized successfully.")
@@ -131,11 +138,17 @@ class MainController:
                 log.info(f"Score limit per round ({cfg.SCORES_PER_GAME_SESSION} scores) reached for '{self.game_id}'. "
                          f"Ending this round...")
                 if self.pubsub_publisher and self.pubsub_publisher.is_ready():
+                    message = {
+                        "command": "stop-recording",
+                        "gameId": self.game_id,
+                        "reason": "round-end"
+                    }
+                    byte_message = json.dumps(message).encode('utf-8')
                     threading.Thread(target=self.pubsub_publisher.publish_message,
-                                     args=(b'{"command": "stop-recording", "reason": "round-end"}',),
-                                     kwargs={'game_id': self.game_id}, daemon=True).start()
+                                     args=(byte_message,),
+                                     daemon=True).start()
                 else:
-                    log.warning("Cannot publish stop: Publisher not ready.")
+                    log.warning("Cannot publish message: Publisher not ready.")
 
     def handle_msg(self, msg_data: str):
         """Handles incoming Pub/Sub commands (expects JSON)."""
@@ -144,13 +157,12 @@ class MainController:
             command = data.get("command").lower()
             game_id = data.get("gameId")
             reason = data.get("reason").lower().strip().replace(' ', '-')
-            round_number = int(data.get("round", 1))
 
             if command == "start-recording":
                 code = self._start_rec(game_id, reason)
                 if code != -1:
-                    if round_number == 1: self.scores_from_all_rounds = []
-                    self.round_number = round_number
+                    self.round_number = int(data.get("round", 1))
+                    if self.round_number == 1: self.scores_from_all_rounds = []
                     self._update_station_info(field_updates={
                         "gameId": game_id,
                         "isRunning": True
@@ -160,14 +172,21 @@ class MainController:
                     })
 
             elif command == "stop-recording":
-                recorded_files = self._stop_rec(reason)
+                if game_id != self.game_id:
+                    log.warning(f"Current game session is not '{game_id}'. Command ignored!")
+                    return
+                else:
+                    with self._lock:
+                        if not self._is_rec: return
 
+                recorded_files = self._stop_rec(reason)
                 if reason != "cancellation":
                     gcs_video_uri_list = self._upload_files(recorded_files[:1], upload_async=False)
                     lane_view_video_uri = gcs_video_uri_list[0]
 
                     # Update replayVideo field
                     public_video_url = lane_view_video_uri.replace("gs://", "https://storage.googleapis.com/")
+                    print(public_video_url)
                     self._update_station_info(field_updates={"replayVideo": public_video_url})
 
                     # Update geminiFeedback field
@@ -186,11 +205,13 @@ class MainController:
                             "gameStatus": "completed"
                         })
 
-                    # Upload remaining files async
+                    # Upload remaining files
                     self._upload_files(recorded_files[1:])
 
                     # Update isRunning field
                     self._update_station_info(field_updates={"isRunning": False})
+
+                    log.info(f"Successfully ended round: {self.round_number} for game: '{self.game_id}'")
                 else:
                     self._update_station_info(field_updates={
                         "gameId": "",
@@ -198,10 +219,7 @@ class MainController:
                         "geminiFeedback": "",
                         "isRunning": False,
                     })
-
                     self._update_game_session(field_updates={"gameStatus": "cancelled"})
-
-
             else:
                 log.warning(f"Unrecognized command: '{command}' in received message: {data}.")
 
@@ -220,7 +238,7 @@ class MainController:
             self._is_rec = True
             self.game_id = game_id
             self.score_count = 0
-            log.info(f"STARTING Recording Session: GameID='{self.game_id}' - (Reason: {reason})")
+            log.info(f"STARTING Recording Session: Game: '{self.game_id}', Round: {self.round_number}, Reason: {reason}")
 
         started = 0
         for cid, rec in self.recorders.items():  # Start sequentially
@@ -236,7 +254,8 @@ class MainController:
     def _stop_rec(self, reason: str = "unknown"):
         """Stops recording session."""
         with self._lock:
-            if not self._is_rec: return
+            if not self._is_rec:
+                return -1
             log.info(f"STOPPING Recording Session: GameID='{self.game_id}' - (Reason: {reason})")
             self._is_rec = False
             # game_id_stopped = self.game_id
@@ -260,23 +279,20 @@ class MainController:
         log.info(f"Stopped recorders for game '{self.game_id}'.")
         return stopped_files
 
-    def _upload_files(self, files_to_upload: list[str],
+    def _upload_files(self, files_to_upload: list[str], make_public: bool = True,
                       delete_local: bool = cfg.DELETE_LOCAL_RECORDINGS, upload_async: bool = True):
         gcs_video_uri_list = []
         if self.gcs_uploader and self.gcs_uploader.is_ready():
             log.info(f"Queueing {len(files_to_upload)} files for upload...")
             for file_path in files_to_upload:
                 filename, file_extension = os.path.splitext(os.path.basename(file_path))
-                # new_filename = f"{filename}_round{self.round_number}{file_extension}"
-                new_filename = os.path.basename(file_path)
+                new_filename = f"{filename}_round{self.round_number}{file_extension}"
 
-                blob_name = f"game_{self.game_id}/{new_filename}"
-                # if upload_async:
-                #     self.gcs_uploader.upload_async(file_path, blob_name, delete_local=delete_local)
-                # else:
-                #     self.gcs_uploader.upload_async(file_path, blob_name, delete_local=delete_local)
+                blob_name = f"recordings/{self.game_id}/{new_filename}"
+                self.gcs_uploader.upload_file(file_path, blob_name, make_public=make_public,
+                                              delete_local=delete_local, upload_async=upload_async)
 
-                gcs_video_uri = f"gs://{cfg.GCS_BUCKET_NAME}/recordings/{blob_name}"
+                gcs_video_uri = f"gs://{cfg.GCS_BUCKET_NAME}/{blob_name}"
                 gcs_video_uri_list.append(gcs_video_uri)
 
             return gcs_video_uri_list

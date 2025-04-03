@@ -12,14 +12,15 @@ log = logging.getLogger(__name__)
 
 # --- STATION Configuration ---
 STATION_ID = os.environ["STATION_ID"]
-ENSURE_RESOURCES = False
+ENSURE_RESOURCES = True
 
 # --- Google Cloud Configuration ---
 GOOGLE_CLOUD_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID", "next-25-roll-and-score")
 GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
 PUBSUB_TOPIC_ID = os.getenv("PUBSUB_TOPIC_ID", f"{STATION_ID}-pub")
 PUBSUB_SUBSCRIPTION_ID = os.getenv("PUBSUB_SUBSCRIPTION_ID", f"{STATION_ID}-sub")
-GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", f"{STATION_ID}-recordings")
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", f"{STATION_ID}-bucket")
+GCS_BUCKET_LOCATION = os.getenv("GCS_BUCKET_LOCATION", "US")
 FIRESTORE_DATABASE_ID = os.getenv("FIRESTORE_DATABASE_ID", "roll-and-score")
 GAME_SESSIONS_COLLECTION_NAME = os.getenv("GAME_SESSIONS_COLLECTION", "game-sessions")
 STATION_INFO_COLLECTION_NAME = os.getenv("STATION_INFO_COLLECTION_NAME", "station-info")
@@ -41,7 +42,8 @@ WEBCAM_CONFIGS = [
 OUTPUT_DIR = "./recordings"  # Directory to save recordings locally before upload
 VIDEO_FPS = 30.0  # Desired frames per second
 VIDEO_RESOLUTION = (640, 480)  # Desired resolution (width, height)
-DELETE_LOCAL_RECORDINGS = False
+VIDEO_CODEC = 'avc1'  # Use 'avc1' for H.264/AVC in MP4 - Need this for showing on websites
+DELETE_LOCAL_RECORDINGS = True
 
 # Score Tracker Settings
 SCORE_TRACKER_SCORE_ZONES_JSON_PATH = 'calibration/score_zones.json'

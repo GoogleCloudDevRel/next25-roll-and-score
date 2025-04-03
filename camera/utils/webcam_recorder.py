@@ -16,7 +16,7 @@ class WebcamRecorder:
     """Manages video capture and recording for one webcam."""
 
     def __init__(self, webcam_id: int, output_dir: str, output_filename: str, fps: float,
-                 resolution: Tuple[int, int], codec: str = 'mp4v', processor: Optional[BaseProcessor] = None):
+                 resolution: Tuple[int, int], codec: str, processor: Optional[BaseProcessor] = None):
         self.webcam_id = webcam_id
         self.output_dir = output_dir
         self.output_filename = output_filename
@@ -120,7 +120,7 @@ class WebcamRecorder:
         log.info(f"Stopped cam {self.webcam_id}. File: {self.output_file_original}")
         if self.processor:
             log.info(f"Stopped cam {self.webcam_id}. File: {self.output_file_annotated}")
-            return (self.output_file_original, self.output_file_annotated)
+            return self.output_file_original, self.output_file_annotated
 
         return self.output_file_original, None
 
