@@ -7,8 +7,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY services .
-COPY utils .
+COPY services services
+COPY utils utils
 COPY config.py .
 COPY main_controller.py .
 

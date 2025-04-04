@@ -35,8 +35,9 @@ gcloud run deploy "$SERVICE_NAME"-station01 \
     --memory 4Gi \
     --min-instances 1 \
     --set-env-vars STATION_ID="station01" \
+    --no-allow-unauthenticated
 
-gcloud run deploy "$SERVICE_NAME"-station01 \
+gcloud run deploy "$SERVICE_NAME"-station02 \
     --image "$REGION"-docker.pkg.dev/"$PROJECT_ID"/"$REPOSITORY"/"$SERVICE_NAME" \
     --region "$REGION" \
     --service-account="back-end-service-account" \
@@ -45,5 +46,6 @@ gcloud run deploy "$SERVICE_NAME"-station01 \
     --memory 4Gi \
     --min-instances 1 \
     --set-env-vars STATION_ID="station02" \
+    --no-allow-unauthenticated
 
 echo "Deployment task is finished!"
