@@ -5,8 +5,6 @@ from google.cloud import pubsub_v1, storage, firestore
 from google.cloud.exceptions import NotFound, Conflict, GoogleCloudError
 from google.auth.exceptions import DefaultCredentialsError
 
-from firebase_admin import firestore
-
 log = logging.getLogger(__name__)
 
 
