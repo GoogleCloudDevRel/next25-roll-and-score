@@ -160,15 +160,16 @@ class MainController:
             command = data.get("command").lower()
             game_id = data.get("gameId")
             reason = data.get("reason").lower().strip().replace(' ', '-')
+            round_number = data.get("roundNumber", 1)
+
+            if self.game_id and game_id != self.game_id:
+                log.warning(f"Current game session is not '{game_id}'. Command ignored!")
+                return
 
             if command == "start-recording":
-                if self.game_id and game_id != self.game_id:
-                    log.warning(f"Current game session is not '{game_id}'. Command ignored!")
-                    return
-
                 code = self._start_rec(game_id, reason)
                 if code != -1:
-                    self.round_number = int(data.get("round", 1))
+                    self.round_number = int(round_number)
                     self._update_station_info(field_updates={
                         "gameId": game_id,
                         "isRunning": True
@@ -182,11 +183,8 @@ class MainController:
                     log.warning(f"Current game session is not '{game_id}'. Command ignored!")
                     return
 
-                if self._stop.is_set(): return
-                self._stop.set()
-
                 recorded_files = self._stop_rec(reason)
-
+                if recorded_files == -1: return  # Not a valid stopping
                 if reason != "cancellation":
                     gcs_video_uri_list = self._upload_files(recorded_files[:1], upload_async=False)
                     lane_view_video_uri = gcs_video_uri_list[0]
@@ -265,10 +263,9 @@ class MainController:
         with self._lock:
             if not self._is_rec:
                 return -1
+
             log.info(f"STOPPING Recording Session: GameID='{self.game_id}' - (Reason: {reason})")
             self._is_rec = False
-            # game_id_stopped = self.game_id
-            # self.game_id = None
             self.score_count = 0
 
         stopped_files = []
@@ -404,7 +401,6 @@ class MainController:
 # --- Main Execution ---
 if __name__ == "__main__":
     controller: Optional[MainController] = None
-
 
     def handle_signal(sig, frame):
         log.warning(f"Received signal {signal.Signals(sig).name}. Shutting down...")
