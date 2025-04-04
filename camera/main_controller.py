@@ -137,18 +137,21 @@ class MainController:
             if self.score_count == cfg.SCORES_PER_GAME_SESSION:
                 log.info(f"Score limit per round ({cfg.SCORES_PER_GAME_SESSION} scores) reached for '{self.game_id}'. "
                          f"Ending this round...")
-                if self.pubsub_publisher and self.pubsub_publisher.is_ready():
-                    message = {
-                        "command": "stop-recording",
-                        "gameId": self.game_id,
-                        "reason": "round-end"
-                    }
-                    byte_message = json.dumps(message).encode('utf-8')
-                    threading.Thread(target=self.pubsub_publisher.publish_message,
-                                     args=(byte_message,),
-                                     daemon=True).start()
-                else:
-                    log.warning("Cannot publish message: Publisher not ready.")
+                self._publish_stop_message()
+
+    def _publish_stop_message(self):
+        if self.pubsub_publisher and self.pubsub_publisher.is_ready():
+            message = {
+                "command": "stop-recording",
+                "gameId": self.game_id,
+                "reason": "round-end"
+            }
+            byte_message = json.dumps(message).encode('utf-8')
+            threading.Thread(target=self.pubsub_publisher.publish_message,
+                             args=(byte_message,),
+                             daemon=True).start()
+        else:
+            log.warning("Cannot publish message: Publisher not ready.")
 
     def handle_msg(self, msg_data: str):
         """Handles incoming Pub/Sub commands (expects JSON)."""
@@ -159,34 +162,37 @@ class MainController:
             reason = data.get("reason").lower().strip().replace(' ', '-')
 
             if command == "start-recording":
+                if self.game_id and game_id != self.game_id:
+                    log.warning(f"Current game session is not '{game_id}'. Command ignored!")
+                    return
+
                 code = self._start_rec(game_id, reason)
                 if code != -1:
                     self.round_number = int(data.get("round", 1))
-                    if self.round_number == 1: self.scores_from_all_rounds = []
                     self._update_station_info(field_updates={
                         "gameId": game_id,
                         "isRunning": True
                     })
                     self._update_game_session(field_updates={
-                        "gameStatus": "inProgress",
+                        "gameStatus": f"inProgress",
                     })
 
             elif command == "stop-recording":
                 if game_id != self.game_id:
                     log.warning(f"Current game session is not '{game_id}'. Command ignored!")
                     return
-                else:
-                    with self._lock:
-                        if not self._is_rec: return
+
+                if self._stop.is_set(): return
+                self._stop.set()
 
                 recorded_files = self._stop_rec(reason)
+
                 if reason != "cancellation":
                     gcs_video_uri_list = self._upload_files(recorded_files[:1], upload_async=False)
                     lane_view_video_uri = gcs_video_uri_list[0]
 
                     # Update replayVideo field
                     public_video_url = lane_view_video_uri.replace("gs://", "https://storage.googleapis.com/")
-                    print(public_video_url)
                     self._update_station_info(field_updates={"replayVideo": public_video_url})
 
                     # Update geminiFeedback field
@@ -208,8 +214,11 @@ class MainController:
                     # Upload remaining files
                     self._upload_files(recorded_files[1:])
 
-                    # Update isRunning field
-                    self._update_station_info(field_updates={"isRunning": False})
+                    # Reset variables if this is the last round
+                    if self.round_number == cfg.TOTAL_NUMBER_OF_ROUNDS:
+                        self.game_id = None
+                        self.scores_from_all_rounds = []
+                        self._update_station_info(field_updates={"isRunning": False})
 
                     log.info(f"Successfully ended round: {self.round_number} for game: '{self.game_id}'")
                 else:
@@ -387,7 +396,8 @@ class MainController:
             "isRunning": False,
         })
 
-        time.sleep(1)
+        self._update_game_session(field_updates={"gameStatus": "shutdown"})
+
         log.info("----- Shutdown Complete -----")
 
 
