@@ -7,7 +7,7 @@
       ref="textContent"
       variant="tv-bold-160"
       animateBy="lines"
-      :text="text"
+      :text="message"
     />
     <div
       class="badgeTop"
@@ -16,9 +16,10 @@
       <VBadge ref="badge">
         <IconBase variant="gemini" />
         <VText
-          text="GEMINI COACH"
+          :text="title"
           variant="tv-bold-72"
         />
+        <IconBase variant="gemini" />
       </VBadge>
     </div>
     <div
@@ -80,7 +81,11 @@ const content = ref(null)
 const textContent = ref(null)
 
 const props = defineProps({
-  text: {
+  title: {
+    type: String,
+    required: true,
+  },
+  message: {
     type: String,
     required: true,
   },

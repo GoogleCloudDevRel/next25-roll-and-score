@@ -51,6 +51,32 @@ function handleClick(e) {
   navigateTo(Object.keys(routes)[++index])
 }
 
+let timer = null
+let duration = 10000 // 10 seconds
+const currentScreen = shallowRef('intro')
+
+const startLoopTimer = () => {
+  clearTimeout(timer)
+
+  if (currentScreen.value === 'intro') {
+    duration = 10000 // 10 seconds for intro
+  } else if (currentScreen.value === 'highlights') {
+    duration = 30000 // 30 seconds for highlights
+  }
+
+  timer = setTimeout(() => {
+    if (currentScreen.value === 'intro') {
+      currentScreen.value = 'highlights'
+      navigateTo(currentScreen.value)
+    } else if (currentScreen.value === 'highlights') {
+      currentScreen.value = 'intro'
+      navigateTo(currentScreen.value)
+    }
+
+    startLoopTimer() // Continue the cycle
+  }, duration)
+}
+
 let unsubscribeHighlightsChanges = null
 // Register routes with their animations
 onMounted(async () => {
@@ -58,21 +84,15 @@ onMounted(async () => {
 
   await nextTick()
 
+  const initialView = Object.keys(routes).find((key) => getQueryParam('view', false) === key)
+  index = Object.keys(routes).indexOf(initialView)
+  index = index === -1 ? 0 : index
+  navigateTo(initialView ?? 'intro')
+
   if (getQueryParam('manual')) {
-    const initialView = Object.keys(routes).find((key) => getQueryParam('view', false) === key)
-    index = Object.keys(routes).indexOf(initialView)
-    index = index === -1 ? 0 : index
-
-    navigateTo(initialView ?? 'intro')
-
     document.body.addEventListener('click', handleClick)
   } else {
-    let loopIndex = 0
-    navigateTo('intro')
-    setInterval(() => {
-      loopIndex = loopIndex === Object.keys(routes).length - 1 ? 0 : loopIndex + 1
-      navigateTo(Object.keys(routes)[loopIndex])
-    }, 15000)
+    startLoopTimer()
   }
 
   unsubscribeHighlightsChanges = subscribeToHighlightsChanges()
