@@ -57,7 +57,7 @@ const pre = shallowRef(null)
 const text = shallowRef(null)
 const sub = shallowRef(null)
 
-const { gameStarted, score } = storeToRefs(useScoreStore())
+const { gameStarted, totalScore } = storeToRefs(useScoreStore())
 
 const { navigateTo, isTransitioning } = useRouteManager()
 
@@ -65,7 +65,7 @@ watch(
   () => gameStarted.value && !isTransitioning.value,
   (value) => {
     // If the game has started and the score is greater than 0, navigate to the score screen
-    if (value && score.value > 0) {
+    if (value && totalScore.value > 0) {
       navigateTo('score')
     } else {
       navigateTo('welcome')
