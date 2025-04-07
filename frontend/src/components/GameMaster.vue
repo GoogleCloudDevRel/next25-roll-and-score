@@ -28,17 +28,17 @@
           <div class="station-header-buttons">
             <VButton
               textVariant="bold-24"
-              :text="isRunning ? 'Running' : 'Start Game'"
-              :backgroundColor="isRunning ? 'grey' : 'green'"
-              :disabled="isRunning"
+              :text="gameStarted ? 'Running' : 'Start Game'"
+              :backgroundColor="gameStarted ? 'grey' : 'green'"
+              :disabled="isStartGameDisabled"
               @click="startGame(stationId)"
             />
             <VButton
               textVariant="bold-24"
               text="Cancel Game"
-              :backgroundColor="isRunning ? 'red' : 'grey'"
-              :disabled="!isRunning"
-              @click="cancelGame(stationId, gameId)"
+              :backgroundColor="gameStarted ? 'red' : 'grey'"
+              :disabled="!gameStarted"
+              @click="cancelGame(stationId, currentGameID)"
             />
           </div>
         </div>
@@ -62,15 +62,20 @@ import VButton from './VButton.vue'
 import VText from './VText.vue'
 import VTable from './VTable.vue'
 
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { db } from '@/config/firebaseConfig'
-import { doc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore'
 // import { waitFor } from '@/utils/deferred'
 import { gsap } from '@/utils/gsap'
 import { getQueryParam } from '@/utils/get-query-param'
+import { subscribeGameStarted, useScoreStore } from '@/store'
+import { storeToRefs } from 'pinia'
+
+const scoreStore = useScoreStore()
+const { gameStarted } = storeToRefs(scoreStore)
 
 const tableHeaders = [
-  // { key: 'stationId', label: 'Station ID' },
+  { key: 'gameId', label: 'Game ID' },
   { key: 'startTime', label: 'Start Time' },
   { key: 'endTime', label: 'End Time' },
   { key: 'gameStatus', label: 'Game Status' },
@@ -87,43 +92,65 @@ const formatters = {
 // Controllers
 // ===================================================
 
-const apiUrl = 'http://localhost:5000'
-
 const device = getQueryParam('device', false) || '1'
 const stationId = device.padStart(2, '0')
-const isRunning = ref(false)
-const gameId = ref(null)
+const isStartGameDisabled = ref(false)
+const currentGameID = ref(null)
 const tableData = ref([])
 
-const unsubscribeListeners = {} // Store unsubscribe functions
+let unsubscribeGameStarted = null
+let unsubscribeTableChanges = null
 
 onMounted(async () => {
+  console.log(stationId)
+
+  getUnfinishedGameID()
   blocks.value = Array.from(dashboard.value.querySelectorAll('.block'))
-  setupListeners()
-  setupTableData()
+  unsubscribeGameStarted = subscribeGameStarted()
+  unsubscribeTableChanges = subscribeTableData()
 })
 
 onUnmounted(() => {
-  // Unsubscribe all listeners when the component is unmounted
-  Object.values(unsubscribeListeners).forEach((unsubscribe) => unsubscribe())
+  unsubscribeGameStarted()
+  unsubscribeTableChanges()
 })
 
-const setupTableData = () => {
+const getUnfinishedGameID = async () => {
+  try {
+    const docRef = doc(db, 'station-info', `station${stationId}`)
+    const docSnap = await getDoc(docRef)
+
+    if (docSnap.exists() && docSnap.data()?.gameId) {
+      currentGameID.value = docSnap.data()?.gameId
+    }
+  } catch (error) {
+    console.error('Error fetching unfishined game ID from Firestore:', error)
+  }
+}
+
+function capitalizeFirstLetter(str) {
+  if (!str) {
+    return '' // Handle empty or null strings
+  }
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+const subscribeTableData = async () => {
   const gamesCollection = collection(db, 'game-sessions')
   const q = query(gamesCollection, orderBy('startDateTime', 'desc'), limit(50))
-  unsubscribeListeners['game-sessions'] = onSnapshot(q, (snapshot) => {
+  unsubscribeTableChanges = onSnapshot(q, (snapshot) => {
     tableData.value = [] // Reset the array
 
     snapshot.docs.forEach((doc) => {
       const data = doc.data()
-      // if (data.gameStatus === 'Cancelled') return
-      if (data.stationId === stationId) {
+      if (data.stationId === stationId && data.gameStatus === 'completed') {
         tableData.value.push({
+          gameId: doc.id,
           startTime: data.startDateTime.toDate().toLocaleTimeString(),
           endTime: data.endDateTime ? data.endDateTime.toDate().toLocaleTimeString() : null,
-          gameStatus: data.gameStatus,
+          gameStatus: capitalizeFirstLetter(data.gameStatus),
           analysisURL:
-            data.gameStatus === 'Completed'
+            data.gameStatus === 'completed'
               ? `${window.location.origin}/?gameId=${doc.id}#/chromebook`
               : null,
         })
@@ -132,29 +159,19 @@ const setupTableData = () => {
   })
 }
 
-const setupListeners = () => {
-  const docRef = doc(db, 'game-stations', `station${stationId}`)
-  unsubscribeListeners[`station${stationId}`] = onSnapshot(
-    docRef,
-    (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data()
-        isRunning.value = data.isRunning || false
-        gameId.value = data.gameId || null
-      } else {
-        console.log(`Station ${stationId} document not found.`)
-      }
-    },
-    (error) => {
-      console.error(`Error listening to station ${stationId}:`, error)
-    },
-  )
-}
+watch(
+  () => gameStarted.value,
+  (v) => {
+    isStartGameDisabled.value = v
+  },
+)
 
 const startGame = async (stationId) => {
   console.log(`Starting game for Station ${stationId}`)
+  isStartGameDisabled.value = true
+
   try {
-    const response = await fetch(`${apiUrl}/api/start_game`, {
+    const response = await fetch('/api/start_game', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -165,7 +182,7 @@ const startGame = async (stationId) => {
     })
 
     const data = await response.json()
-    gameId.value = data.gameId
+    currentGameID.value = data.gameId
     console.log('Game started successfully:', data.gameId)
   } catch (error) {
     console.error('Error creating game:', error)
@@ -175,7 +192,7 @@ const startGame = async (stationId) => {
 const cancelGame = async (stationId, gameId) => {
   console.log(`Cancelling game ${gameId} for Station ${stationId}`)
   try {
-    const response = await fetch(`${apiUrl}/api/cancel_game`, {
+    const response = await fetch('/api/cancel_game', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
