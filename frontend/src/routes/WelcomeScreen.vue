@@ -2,7 +2,8 @@
   <div class="center">
     <GeminiCoach
       ref="geminiCoach"
-      :text="copy.welcomeText"
+      :title="copy.introTitle"
+      :message="copy.welcomeText"
       :immediate="false"
     />
   </div>
