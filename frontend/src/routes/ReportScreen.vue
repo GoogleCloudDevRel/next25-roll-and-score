@@ -2,7 +2,8 @@
   <div class="center">
     <GeminiCoach
       ref="geminiCoach"
-      :text="geminiReport"
+      title="Gemini Coach"
+      :message="geminiAnalysis"
       :immediate="false"
     />
     <VProgress />
@@ -20,7 +21,7 @@ import { useScoreStore } from '@/store'
 
 const geminiCoach = ref(null)
 const scoreStore = useScoreStore()
-const { geminiReport, gameStarted } = storeToRefs(scoreStore)
+const { geminiAnalysis, gameStarted } = storeToRefs(scoreStore)
 
 const { navigateTo } = useRouteManager()
 
@@ -39,7 +40,7 @@ defineExpose({
   animateIdle: async () => {
     if (getQueryParam('manual')) return
     await new Promise((resolve) =>
-      setTimeout(resolve, Math.min(geminiReport.value.length * 50, 1000)),
+      setTimeout(resolve, Math.min(geminiAnalysis.value.length * 50, 1000)),
     )
     if (gameStarted.value) {
       navigateTo('score')
