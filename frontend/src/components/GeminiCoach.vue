@@ -83,11 +83,11 @@ const textContent = ref(null)
 const props = defineProps({
   title: {
     type: String,
-    required: true,
+    required: false,
   },
   message: {
     type: String,
-    required: true,
+    required: false,
   },
   showBadge: {
     type: Boolean,
@@ -109,7 +109,7 @@ function prepare() {
 }
 
 watch(
-  () => props.text,
+  [() => props.title, () => props.message],
   async () => {
     await nextTick()
     setTimeout(prepare, 60)
