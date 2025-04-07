@@ -3,7 +3,7 @@
     <GeminiCoach
       ref="geminiCoach"
       :show-badge="false"
-      :text="copy.startText"
+      :message="copy.startText"
       :bg-color="colors.brandYellow"
       :immediate="false"
     />
