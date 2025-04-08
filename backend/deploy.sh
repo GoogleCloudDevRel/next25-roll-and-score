@@ -33,8 +33,9 @@ gcloud run deploy "$SERVICE_NAME" \
     --region "$REGION" \
     --service-account="back-end-service-account" \
     --platform managed \
-    --cpu 2 \
-    --memory 4Gi \
+    --cpu 1 \
+    --memory 2Gi \
+    --min-instances 1 \
     --set-env-vars GC_PROJECT_ID="$PROJECT_ID",FS_DATABASE_ID="$FS_DATABASE_ID",FS_COLLECTION_NAME="$FS_COLLECTION_NAME" \
     --allow-unauthenticated
 

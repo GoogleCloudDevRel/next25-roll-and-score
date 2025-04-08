@@ -117,17 +117,17 @@ class FirestoreService:
         else:
             raise Exception("Firestore not initialized")
 
-    def update_field(self, collection_name, document_id, field_name, field_value):
+    def update_fields(self, collection_name, document_id, field_value_dict):
         """
         Updates a specific field in a Firestore document.
         """
         if self.db:
             try:
                 doc_ref = self.db.collection(collection_name).document(document_id)
-                doc_ref.update({field_name: field_value})
-                logger.info(f"Updated {field_name} with value {field_value}")
+                doc_ref.update(field_value_dict)
+                logger.info(f"Updated {collection_name}/{document_id} with value {field_value_dict}")
             except Exception as e:
-                logger.error(f"Error updating {field_name} with value {field_value}")
+                logger.error(f"Error updating {collection_name}/{document_id}")
                 raise e
         else:
             raise Exception("Firestore not initialized")
