@@ -57,11 +57,11 @@ class FirestoreUpdater:
             log.error("Firestore client is not ready or initialized. Cannot update document.")
             return False
 
-        log.info(f"Updating Firestore document: {collection_name}/{document_id} with fields: {list(field_updates.keys())}")
+        log.info(f"Updating Firestore document: {collection_name}/{document_id}")
         try:
             doc_ref = self.db_client.collection(collection_name).document(document_id)
             doc_ref.update(field_updates)
-            log.info(f"Successfully updated Firestore document: {collection_name}/{document_id}")
+            log.info(f"Successfully updated Firestore document: {collection_name}/{document_id} with: {field_updates}")
             return True
         except NotFound:
              log.error(f"Firestore document not found: {collection_name}/{document_id}. Cannot update.")

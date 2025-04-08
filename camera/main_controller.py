@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import os
@@ -36,9 +37,9 @@ class MainController:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self.game_id: Optional[str] = None
-        self.round_number: Optional[int] = None
-        self.scores_from_all_rounds: list[int] = []
+        self.round_number: int = 0
         self.score_count: int = 0
+        self.scores_from_all_rounds: list[int] = []
         self._initialize_components()
 
     def _initialize_components(self):
@@ -137,14 +138,13 @@ class MainController:
             if self.score_count == cfg.SCORES_PER_GAME_SESSION:
                 log.info(f"Score limit per round ({cfg.SCORES_PER_GAME_SESSION} scores) reached for '{self.game_id}'. "
                          f"Ending this round...")
-                self._publish_stop_message()
+                self._publish_round_end_message()
 
-    def _publish_stop_message(self):
+    def _publish_round_end_message(self):
         if self.pubsub_publisher and self.pubsub_publisher.is_ready():
             message = {
-                "command": "stop-recording",
+                "command": "round-end",
                 "gameId": self.game_id,
-                "reason": "round-end"
             }
             byte_message = json.dumps(message).encode('utf-8')
             threading.Thread(target=self.pubsub_publisher.publish_message,
@@ -159,74 +159,121 @@ class MainController:
             data = json.loads(msg_data)
             command = data.get("command").lower()
             game_id = data.get("gameId")
-            reason = data.get("reason").lower().strip().replace(' ', '-')
-            round_number = data.get("roundNumber", 1)
 
             if self.game_id and game_id != self.game_id:
-                log.warning(f"Current game session is not '{game_id}'. Command ignored!")
+                log.warning(f"Current GameID is not '{game_id}'. Command ignored!")
                 return
 
-            if command == "start-recording":
-                code = self._start_rec(game_id, reason)
-                if code != -1:
-                    self.round_number = int(round_number)
-                    self._update_station_info(field_updates={
-                        "gameId": game_id,
-                        "isRunning": True
-                    })
-                    self._update_game_session(field_updates={
-                        "gameStatus": f"inProgress",
-                    })
+            # --- START GAME ---
+            if command == "start-game":
+                self.game_id = game_id
+                code = self._start_recording(game_id)
+                if code == -1:
+                    return log.warning(f"Cannot record")
 
-            elif command == "stop-recording":
-                if game_id != self.game_id:
-                    log.warning(f"Current game session is not '{game_id}'. Command ignored!")
-                    return
+                self.round_number += 1
+                log.info(f"Starting game: {self.game_id} round: {self.round_number}")
 
-                recorded_files = self._stop_rec(reason)
-                if recorded_files == -1: return  # Not a valid stopping
-                if reason != "cancellation":
-                    gcs_video_uri_list = self._upload_files(recorded_files[:1], upload_async=False)
-                    lane_view_video_uri = gcs_video_uri_list[0]
+                # Update station info on firestore
+                self._update_station_info(field_updates={
+                    "gameId": game_id,
+                    "isRunning": True,
+                    "replayVideo": "",
+                    "geminiAnalysis": "",
+                })
 
-                    # Update replayVideo field
-                    public_video_url = lane_view_video_uri.replace("gs://", "https://storage.googleapis.com/")
-                    self._update_station_info(field_updates={"replayVideo": public_video_url})
+                # Update game session to inProgress on firestore
+                self._update_game_session(field_updates={
+                    "gameStatus": f"inProgress",
+                })
 
-                    # Update geminiFeedback field
-                    gemini_feedback = self.gemini_coach.generate_feedback(lane_view_video_uri)
-                    self._update_station_info(field_updates={"geminiFeedback": gemini_feedback})
+            # --- RESUME GAME ---
+            elif command == "resume-game":
+                self._update_station_info(field_updates={
+                    "replayVideo": "",
+                    "geminiAnalysis": "",
+                })
 
-                    # Add video with feedback and game status to game-sessions collection
-                    new_vid_with_feedback = {"video": public_video_url, "feedback": gemini_feedback}
-                    if self.round_number < cfg.TOTAL_NUMBER_OF_ROUNDS:
-                        self._update_game_session(field_updates={
-                            "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
-                        })
-                    else:
-                        self._update_game_session(field_updates={
-                            "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
-                            "gameStatus": "completed"
-                        })
+                code = self._start_recording(game_id)
+                if code == -1:
+                    return log.warning(f"Cannot record")
 
-                    # Upload remaining files
-                    self._upload_files(recorded_files[1:])
-
-                    # Reset variables if this is the last round
-                    if self.round_number == cfg.TOTAL_NUMBER_OF_ROUNDS:
-                        self.game_id = None
-                        self.scores_from_all_rounds = []
-                        self._update_station_info(field_updates={"isRunning": False})
-
-                    log.info(f"Successfully ended round: {self.round_number} for game: '{self.game_id}'")
+                self.round_number += 1
+                if self.round_number <= cfg.TOTAL_NUMBER_OF_ROUNDS:
+                    log.info(f"Resuming game: {self.game_id} round: {self.round_number}")
                 else:
-                    self._update_station_info(field_updates={
-                        "gameId": "",
-                        "replayVideo": "",
-                        "geminiFeedback": "",
-                        "isRunning": False,
+                    return log.warning(f"Maximum round {self.round_number} reached. Can't play anymore")
+
+            # --- CANCEL GAME ---
+            elif command == "cancel-game":
+                self._terminate_recording()
+
+                # Reset station info on firestore
+                self._update_station_info(field_updates={
+                    "gameId": "",
+                    "isRunning": False,
+                    "replayVideo": "",
+                    "geminiAnalysis": "",
+                })
+
+                # Update game session to cancelled on firestore
+                self._update_game_session(field_updates={
+                    "endDateTime": datetime.datetime.now(datetime.timezone.utc),  # Ensure UTC Time
+                    "gameStatus": "cancelled"
+                })
+
+                # Reset all the variables
+                self.game_id = None
+                self.round_number = 0
+                self.score_count = 0
+                self.scores_from_all_rounds = []
+
+            # --- ROUND END ---
+            elif command == "round-end":
+                recorded_files = self._stop_recording()
+                if recorded_files == -1:  # Not a valid stopping
+                    return log.warning("Already stopped recordings. Can't stop again")
+
+                # Upload lane view video - using recorded_files[:1] assumes that first video is the lane view video
+                gcs_video_uri_list = self._upload_files(recorded_files[:1], upload_async=False)
+                lane_view_video_uri = gcs_video_uri_list[0]
+
+                # Update replayVideo field
+                public_video_url = lane_view_video_uri.replace("gs://", "https://storage.googleapis.com/")
+                self._update_station_info(field_updates={
+                    "replayVideo": public_video_url,
+                })
+
+                # Update geminiAnalysis field
+                gemini_feedback = self.gemini_coach.generate_feedback(lane_view_video_uri)
+                self._update_station_info(field_updates={
+                    "geminiAnalysis": gemini_feedback,
+                })
+
+                # Upload remaining files
+                self._upload_files(recorded_files[1:])
+
+                # Add video with feedback and game status to game-sessions collection
+                new_vid_with_feedback = {"video": public_video_url, "feedback": gemini_feedback}
+                if self.round_number < cfg.TOTAL_NUMBER_OF_ROUNDS:  # for intermediate rounds
+                    self._update_game_session(field_updates={
+                        "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
                     })
-                    self._update_game_session(field_updates={"gameStatus": "cancelled"})
+
+                else:  # for the final round
+                    self._update_game_session(field_updates={
+                        "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
+                        "endDateTime": datetime.datetime.now(datetime.timezone.utc),  # Ensure UTC Time
+                        "gameStatus": "completed"
+                    })
+
+                    # Reset internal variables
+                    self.game_id = None
+                    self.round_number = 0
+                    self.scores_from_all_rounds = []
+
+                log.info(f"Successfully ended round: {self.round_number} for game: '{self.game_id}'")
+
             else:
                 log.warning(f"Unrecognized command: '{command}' in received message: {data}.")
 
@@ -235,7 +282,7 @@ class MainController:
         except Exception as e:
             log.error(f"Error handling message: {e}", exc_info=True)
 
-    def _start_rec(self, game_id: str, reason: str = "unknown"):
+    def _start_recording(self, game_id: str):
         """Starts recording session."""
 
         with self._lock:
@@ -245,7 +292,7 @@ class MainController:
             self._is_rec = True
             self.game_id = game_id
             self.score_count = 0
-            log.info(f"STARTING Recording Session: Game: '{self.game_id}', Round: {self.round_number}, Reason: {reason}")
+            log.info(f"STARTING Recording Session: Game: '{self.game_id}', Round: {self.round_number}")
 
         started = 0
         for cid, rec in self.recorders.items():  # Start sequentially
@@ -258,32 +305,38 @@ class MainController:
         if started == 0 and self.recorders:
             with self._lock: self._is_rec = False
 
-    def _stop_rec(self, reason: str = "unknown"):
+    def _stop_recording(self):
         """Stops recording session."""
         with self._lock:
             if not self._is_rec:
                 return -1
 
-            log.info(f"STOPPING Recording Session: GameID='{self.game_id}' - (Reason: {reason})")
+            log.info(f"STOPPING Recording Session: GameID='{self.game_id}'")
             self._is_rec = False
             self.score_count = 0
 
         stopped_files = []
-        summaries = {}
         for cid, rec in self.recorders.items():  # Stop sequentially
             if rec.is_recording or (rec.thread and rec.thread.is_alive()):
                 original, annotated = rec.stop_recording()
                 if original: stopped_files.append(original)
                 if annotated: stopped_files.append(annotated)
 
-                # try:  # Get summary
-                #     proc = rec.get_processor()
-                #     summ = proc.get_summary() if proc and hasattr(proc, 'get_summary') else None
-                #     if summ: summaries[cid] = summ
-                # except Exception as e:
-                #     log.error(f"Summary error cam {cid}: {e}")
         log.info(f"Stopped recorders for game '{self.game_id}'.")
         return stopped_files
+
+    def _terminate_recording(self):
+        """Terminate recording session. (User intervention)"""
+        with self._lock:
+            if not self._is_rec:
+                return -1
+
+            log.info(f"TERMINATING Recording Session: GameID='{self.game_id}'")
+            self._is_rec = False
+
+        for cid, rec in self.recorders.items():  # Stop sequentially
+            if rec.is_recording or (rec.thread and rec.thread.is_alive()):
+                rec.stop_recording()
 
     def _upload_files(self, files_to_upload: list[str], make_public: bool = True,
                       delete_local: bool = cfg.DELETE_LOCAL_RECORDINGS, upload_async: bool = True):
@@ -310,8 +363,6 @@ class MainController:
         Helper function to update the document in Firestore.
         """
         if self.firestore_updater and self.firestore_updater.is_ready() and self.game_id:
-            log.info(f"Attempting to update Firestore for game: '{self.game_id}'...")
-
             # Call the method on the FirestoreUpdater instance
             success = self.firestore_updater.update_document(
                 collection_name=cfg.GAME_SESSIONS_COLLECTION_NAME,
@@ -330,18 +381,13 @@ class MainController:
         collection_name = cfg.STATION_INFO_COLLECTION_NAME
         document_id = cfg.STATION_ID
 
+        log.info(f"Attempting to update Firestore document: '{document_id}'")
         if self.firestore_updater and self.firestore_updater.is_ready() and document_id:
-            log.info(f"Attempting to update Firestore Document: '{document_id}' with {field_updates}...")
-
-            success = self.firestore_updater.update_document(
+            self.firestore_updater.update_document(
                 collection_name=collection_name,
                 document_id=document_id,
                 field_updates=field_updates
             )
-            if success:
-                log.info(f"Firestore update successful for document: '{document_id}'.")
-            else:
-                log.error(f"Firestore update failed for document: '{document_id}'.")
 
     def _print_summary(self, summaries: dict):
         log.info(f"----- Summary: GameID: {self.game_id} -----")
@@ -383,18 +429,16 @@ class MainController:
         log.info("----- Shutting Down -----")
         self._stop.set()
         if self.pubsub_listener: self.pubsub_listener.stop()
-        if self._is_rec: self._stop_rec("shutdown")
+        if self._is_rec: self._stop_recording()
         if self.pubsub_publisher: self.pubsub_publisher.close()
 
         self._update_station_info(field_updates={
             "gameId": "",
             "replayVideo": "",
-            "geminiFeedback": "",
+            "geminiAnalysis": "",
             "isRunning": False,
         })
-
-        self._update_game_session(field_updates={"gameStatus": "shutdown"})
-
+        if self.game_id: self._update_game_session(field_updates={"gameStatus": "shutdown"})
         log.info("----- Shutdown Complete -----")
 
 
