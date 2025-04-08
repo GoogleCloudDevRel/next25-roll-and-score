@@ -19,30 +19,31 @@
 import BackgroundBase from '@/components/background/BackgroundBase.vue'
 import BackgroundRings from '@/components/background/BackgroundRings.vue'
 import RollAndScoreIntro from '@/components/RollAndScoreIntro.vue'
-import { useRouteManager } from '@/router/useRouteManager'
 
-import { nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { shallowRef, watch, onMounted, computed, onUnmounted, ref } from 'vue'
+import { useRouteManager } from '@/router/useRouteManager'
+import { subscribeGameStarted, subscribeTotalScore, useScoreStore } from '@/store'
 
 import WelcomeScreen from '../routes/WelcomeScreen.vue'
 import StartScreen from '../routes/StartScreen.vue'
 import ScoreScreen from '../routes/ScoreScreen.vue'
+import ProgressScreen from '../routes/ProgressScreen.vue'
 import ReplayScreen from '../routes/ReplayScreen.vue'
 import ReportScreen from '../routes/ReportScreen.vue'
 import FinalScreen from '../routes/FinalScreen.vue'
-import ProgressScreen from '../routes/ProgressScreen.vue'
-import { getQueryParam } from '@/utils/get-query-param'
-import {
-  subscribeGameStarted,
-  subscribeToHighlightsChanges,
-  subscribeToScoreChanges,
-  useScoreStore,
-} from '@/store'
-import { storeToRefs } from 'pinia'
+
+const scoreStore = useScoreStore()
+const { navigateTo, currentRoute, registerRoutes } = useRouteManager()
+
+const gameStarted = computed(() => scoreStore.gameStarted)
+const totalScore = computed(() => scoreStore.totalScore)
+const gameId = computed(() => scoreStore.gameId)
+const tries = computed(() => scoreStore.tries)
+const maxTries = computed(() => scoreStore.maxTries)
 
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
-
-const routes = {
+const routeComponents = {
   intro: RollAndScoreIntro,
   welcome: WelcomeScreen,
   start: StartScreen,
@@ -53,81 +54,121 @@ const routes = {
   final: FinalScreen,
 }
 
-const { registerRoutes, navigateTo, isTransitioning, onRouteChange } = useRouteManager()
-const scoreStore = useScoreStore()
-const { gameStarted } = storeToRefs(scoreStore)
+// --- Route registration ---
+registerRoutes(routeComponents, activeRoutes, activeRoutesRef)
 
+// --- Helper function to navigate ---
+const navigateToScreen = async (screen) => {
+  if (currentRoute.value?.id !== screen) {
+    navigateTo(screen)
+  }
+}
+
+// --- Timers for sequences ---
+const introWelcomeLoopTimer = ref(null)
+const scoreReplyReportTimer = ref(null)
+
+// --- Helper function to clear all timers ---
+const clearAllTimers = () => {
+  if (introWelcomeLoopTimer.value) {
+    clearTimeout(introWelcomeLoopTimer.value)
+    introWelcomeLoopTimer.value = null
+  }
+  if (scoreReplyReportTimer.value) {
+    clearTimeout(scoreReplyReportTimer.value)
+    scoreReplyReportTimer.value = null
+  }
+}
+
+// --- Intro/Welcome Loop ---
+const startIntroWelcomeLoop = () => {
+  clearAllTimers() // Ensure other timers are stopped
+
+  const loop = async () => {
+    if (!gameStarted.value) {
+      // Only loop if game is not started
+      const currentScreen = currentRoute.value?.id
+      if (currentScreen === 'intro') {
+        await navigateToScreen('welcome')
+      } else {
+        // Default to intro if not on welcome (or if initial state)
+        await navigateToScreen('intro')
+      }
+      // Schedule next loop iteration
+      if (!gameStarted.value) {
+        // Double check game hasn't started during navigation
+        introWelcomeLoopTimer.value = setTimeout(loop, 10000) // 10 seconds interval
+      }
+    } else {
+      introWelcomeLoopTimer.value = null // Stop timer if game started
+    }
+  }
+  loop() // Start the loop immediately
+}
+
+// --- Intro/Welcome Loop and Score Page Navigation Watcher ---
 watch(
-  () => !gameStarted.value && !isTransitioning.value,
-  (v) => {
-    if (getQueryParam('manual')) return
-    if (v) {
-      navigateTo('intro')
+  () => [gameStarted.value, totalScore.value],
+  ([isGameRunning], [newTotalScoreVal, oldTotalScoreVal]) => {
+    if (isGameRunning === false) {
+      console.log('Watcher: Game is not running. Looping Intro and Welcome')
+      startIntroWelcomeLoop()
+    } else {
+      console.log('Watcher: Game is running. Clearing all timers')
+      clearAllTimers()
+
+      if (newTotalScoreVal > oldTotalScoreVal) {
+        console.log('Watcher: A throw was made. Go to Score')
+        navigateToScreen('score')
+      } else {
+        console.log('Watcher: Game is running. Go to Start')
+        navigateToScreen('start')
+      }
     }
   },
 )
 
-let index = 0
-const navigationFlow = [
-  'intro',
-  'welcome',
-  'start',
-  'score',
-  'progress',
-  'replay',
-  'report',
-  'score',
-  'progress',
-  'replay',
-  'report',
-  'score',
-  'final',
-]
+// --- Subscriptions Watcher ---
+watch(
+  () => gameStarted.value,
+  async (isGameRunning) => {
+    if (isGameRunning === true) {
+      console.log('Subscribe to totalScore')
+      unsubFunctionContainer['totalScore'] = await subscribeTotalScore(gameId.value)
+    }
+  },
+)
 
-function handleClick(e) {
-  e.preventDefault()
-  if (isTransitioning.value) return
-  scoreStore.setGameStarted(true)
-  navigateTo(navigationFlow[++index])
+// --- Firestore Subscription Management ---
+const unsubFunctionContainer = {}
+
+const clearAllSubscriptions = async () => {
+  for (const key in unsubFunctionContainer) {
+    if (Object.hasOwn(unsubFunctionContainer, key)) {
+      const unsubscribeFunction = unsubFunctionContainer[key]
+      if (typeof unsubscribeFunction === 'function') {
+        await unsubscribeFunction()
+      }
+    }
+  }
 }
 
-let unsubscribeGameStarted = null
-let unsubscribeScoreChanges = null
-let unsubscribeHighlightsChanges = null
-onRouteChange((route) => {
-  index = navigationFlow.indexOf(route.id)
-  console.log(index, navigationFlow[index])
-})
-
-// Register routes with their animations
+// --- Initial Load Logic ---
 onMounted(async () => {
-  const initialView = navigationFlow.find((key) => getQueryParam('view', false) === key)
-  index = navigationFlow.indexOf(initialView)
-  index = index === -1 ? 0 : index
+  await scoreStore.getStationInfo()
 
-  registerRoutes(routes, activeRoutes, activeRoutesRef)
-
-  await nextTick()
-
-  navigateTo(initialView ?? navigationFlow[0])
-
-  if (getQueryParam('manual')) {
-    document.body.addEventListener('click', handleClick)
-  } else {
-    unsubscribeGameStarted = subscribeGameStarted()
-    unsubscribeScoreChanges = subscribeToScoreChanges()
-    unsubscribeHighlightsChanges = subscribeToHighlightsChanges()
+  if (!gameStarted.value && currentRoute.value?.id !== 'intro') {
+    console.log('Game is not running. Looping Intro and Welcome')
+    navigateTo('intro') // Default until state is known
   }
+
+  console.log('Subscribe to gameStarted')
+  unsubFunctionContainer['gameStarted'] = await subscribeGameStarted()
 })
 
 onUnmounted(() => {
-  if (getQueryParam('manual')) {
-    document.body.removeEventListener('click', handleClick)
-  } else {
-    unsubscribeGameStarted()
-    unsubscribeScoreChanges()
-    unsubscribeHighlightsChanges()
-  }
+  clearAllTimers() // Clean up timers
+  clearAllSubscriptions() // Clean up subscriptions
 })
 </script>
 

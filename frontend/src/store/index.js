@@ -1,163 +1,58 @@
 import { getQueryParam } from "@/utils/get-query-param";
 import { defineStore } from "pinia";
 import { db } from '@/config/firebaseConfig';
-import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, getDoc, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot, doc, getDoc, getDocs } from "firebase/firestore";
 
 export const saveEndGame = async () => {
-  if (getQueryParam('manual')) return
-  const scoreStore = useScoreStore()
-  const gameId = scoreStore.gameId
-  const game = doc(collection(db, 'games'), gameId);
-  const gameData = await getDoc(game)
-  await updateDoc(game, {
-    gameStatus: "completed",
-    endTime: new Date(),
-    totalScore: gameData.data().scores.reduce((acc, curr) => acc + curr, 0)
-  })
-  const station = doc(collection(db, 'game-stations'), `station0${scoreStore.device}`)
-  await updateDoc(station, {
-    isRunning: false,
-    gameId: null,
-  })
-  scoreStore.setGameStarted(false)
+
 }
 
-export const subscribeToScoreChanges = async () => {
-  const scoreStore = useScoreStore()
-
-  let gameId = null
-  let unsubFirebase = null
-  const unsubscribe = scoreStore.$subscribe((mutation, state) => {
-    if (state.gameId && state.gameId !== gameId) {
-      unsubFirebase?.()
-      gameId = state.gameId
-      unsubFirebase = handleScoreChanges(gameId)
-    }
-  })
-
-  return unsubscribe
-}
-
-export const handleScoreChanges = async (gameId) => {
-  const game = doc(collection(db, 'games'), gameId);
-  let prevScoreLength = 0
+export const subscribeTotalScore = async (gameId) => {
+  const game = doc(collection(db, 'game-sessions'), gameId);
   const unsubscribe = onSnapshot(game, (gameSnapshot) => {
     const gameData = gameSnapshot.data()
-    if (gameData.scores.length > prevScoreLength) {
-      if (gameData.scores.length - prevScoreLength === 1) {
-        useScoreStore().addScore(gameData.scores[gameData.scores.length - 1])
-      } else {
-        gameData.scores.forEach((score) => {
-          useScoreStore().addScore(score)
-        })
-      }
-      prevScoreLength = gameData.scores.length
-    }
+    useScoreStore().setTotalScore(gameData.totalScore)
+    useScoreStore().setTries(gameData.scores.length)
   })
-
   return unsubscribe
 }
 
 export const subscribeGameStarted = async () => {
-  const gameStartedCollection = collection(db, 'gameStations');
-  const q = query(gameStartedCollection);
-
-  const scoreStore = useScoreStore()
-
-  const device = Number(scoreStore.device)
-  const stationName = `station0${device}`
-
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    querySnapshot.forEach((doc) => {
-      if (doc.id === stationName) {
-        scoreStore.setGameStarted(doc.data().isRunning)
-        scoreStore.setGameId(doc.data().gameId)
-      }
-    })
+  const stationName = useScoreStore().stationName
+  const stationInfo = doc(collection(db, 'station-info'), stationName);
+  const unsubscribe = onSnapshot(stationInfo, (stationInfoSnapshot) => {
+    useScoreStore().setGameStarted(stationInfoSnapshot.data().isRunning)
+    useScoreStore().setGameId(stationInfoSnapshot.data().gameId)
+    useScoreStore().setVideoReplay(stationInfoSnapshot.data().replayVideo)
+    useScoreStore().setGeminiAnalysis(stationInfoSnapshot.data().geminiAnalysis)
   })
-
   return unsubscribe
-}
-
-// TODO: fetch video replay
-const fetchVideoReplay = async () => {
-  try {
-    const response = await fetch('/api/video-replay');
-    const data = await response.json();
-    console.log(data)
-  } catch (error) {
-    console.error('Error fetching video replay:', error);
-  } finally {
-    await new Promise((resolve) => setTimeout(resolve, 5000))
-    useScoreStore().setVideoReplay('https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')
-  }
-}
-
-// TODO: fetch gemini report
-const fetchGeminiReport = async () => {
-  await fetchVideoReplay()
-
-  try {
-    const response = await fetch('/api/gemini-report');
-    const data = await response.json();
-    console.log(data)
-    useScoreStore().setGeminiReport(data.geminiReport);
-  } catch (error) {
-    console.error('Error fetching gemini report:', error);
-  } finally {
-    await new Promise((resolve) => setTimeout(resolve, 5000))
-    useScoreStore().setGeminiReport('This is a test report')
-  }
 }
 
 export const useScoreStore = defineStore('score', {
   state: () => ({
-    score: 0,
+    totalScore: 0,
     tries: 0,
     step: 0,
     maxTries: 9,
     maxSteps: 3,
     triesPerStep: 3,
     device: getQueryParam('device', false) || '1',
+    stationName: `station0${getQueryParam('device', false) || '1'}`,
     replayVideo: null,
-    gameStarted: false,
+    gameStarted: null,
     gameId: null,
-    geminiReport: null,
+    geminiAnalysis: null,
   }),
   actions: {
-    setScore(score) {
-      this.geminiReport = null
-      this.replayVideo = null
-      if (this.tries < this.maxTries) {
-        this.tries++
-
-        this.score = score
-      }
-
-      if (this.tries % this.triesPerStep === 0) {
-        this.step++
-        console.log(this.step, this.tries)
-        if (this.step < this.maxSteps) {
-          fetchGeminiReport()
-        }
-      }
+    setTotalScore(totalScore) {
+      this.totalScore = totalScore
     },
-    addScore(score) {
-      this.geminiReport = null
-      this.replayVideo = null
-      if (this.tries < this.maxTries) {
-        this.tries++
-
-        this.score += score
-      }
-
-      if (this.tries % this.triesPerStep === 0) {
-        this.step++
-        console.log(this.step, this.tries)
-        if (this.step < this.maxSteps) {
-          fetchGeminiReport()
-        }
-      }
+    setTries(tries){
+      this.tries = tries
+    },
+    setStep(step){
+      this.step = step
     },
     setDevice(device) {
       this.device = device
@@ -168,14 +63,14 @@ export const useScoreStore = defineStore('score', {
     setGameId(gameId) {
       this.gameId = gameId
     },
-    setGeminiReport(geminiReport) {
-      this.geminiReport = geminiReport
+    setGeminiAnalysis(geminiAnalysis) {
+      this.geminiAnalysis = geminiAnalysis
     },
     setVideoReplay(videoReplay) {
       this.replayVideo = videoReplay
     },
     reset() {
-      this.score = 0
+      this.totalScore = 0
       this.tries = 0
       this.step = 0
       this.maxTries = 9
@@ -184,22 +79,57 @@ export const useScoreStore = defineStore('score', {
       this.replayVideo = null
       this.gameStarted = false
       this.gameId = null
-      this.geminiReport = null
-    }
+      this.geminiAnalysis = null
+    },
+    async getStationInfo() {
+      const stationInfoRef = doc(db, 'station-info', this.stationName)
+      const stationInfoDocSnap = await getDoc(stationInfoRef)
+
+      if (stationInfoDocSnap.exists()) {
+        this.setGameId(stationInfoDocSnap.data().gameId)
+        this.setGameStarted(stationInfoDocSnap.data().isRunning)
+        this.setVideoReplay(stationInfoDocSnap.data().replayVideo)
+        this.setGeminiAnalysis(stationInfoDocSnap.data().geminiAnalysis)
+        console.log("gameId:", this.gameId)
+      } else {
+        console.log("Can't get station info!")
+      }
+    },
+    async getGameInfo() {
+      const gameDocRef = doc(db, 'game-sessions', this.gameId)
+      const gameDocSnap = await getDoc(gameDocRef)
+      if (gameDocSnap.exists()) {
+        const gameData = gameDocSnap.data()
+        this.setTotalScore(gameData.totalScore)
+        this.setTries(gameData.scores.length)
+        console.log(`Total score: ${this.totalScore}, tries: ${this.tries}`)
+      }
+    },
   }
 })
 
 export const subscribeToHighlightsChanges = async () => {
   const highlightsStore = useHightlightsStore()
-  const scoresCollection = collection(db, 'games');
+  const scoresCollection = collection(db, 'game-sessions');
   const q = query(scoresCollection, orderBy('totalScore', 'desc'), limit(5));
   const unsubscribe = onSnapshot(q, (querySnapshot) => {
     const scores = [];
+    let recordings = [];
+
     querySnapshot.forEach((doc) => {
       scores.push(doc.data().totalScore);
+      recordings = [recordings, ...doc.data().recordingsWithFeedback]
     })
-    console.log(scores)
     highlightsStore.setScores(scores)
+
+    recordings.shift()
+    if (recordings.length > 0) {
+      const randomIndex = Math.floor(Math.random() * recordings.length);
+      highlightsStore.setVideo(recordings[randomIndex].video)
+    } else {
+      highlightsStore.setVideo("")
+    }
+
   })
 
   return unsubscribe
@@ -212,8 +142,7 @@ export const useHightlightsStore = defineStore('highlights', {
     score3: 0,
     score4: 0,
     score5: 0,
-    // TODO: fetch/retrieve video
-    video: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    video: "",
   }),
   actions: {
     setScores(scores) {
@@ -224,7 +153,7 @@ export const useHightlightsStore = defineStore('highlights', {
       this.score5 = scores[4] || 0;
     },
     setVideo(video) {
-      this.video = video || "https://www.youtube.com/watch?v=3aoxOtMM2rc";
+      this.video = video;
     },
   }
 });
@@ -240,7 +169,7 @@ export const useMobileScoreStore = defineStore('mobileScore', {
   actions: {
     async setData() {
       const gameId = getQueryParam('gameId', false)
-      const scoresCollection = collection(db, 'games')
+      const scoresCollection = collection(db, 'game-sessions')
       const allGames = await getDocs(scoresCollection)
       const sortedGames = allGames.docs.map(game => ({ id: game.id, ...game.data() })).sort((a, b) => b.totalScore - a.totalScore)
 
@@ -250,13 +179,18 @@ export const useMobileScoreStore = defineStore('mobileScore', {
       this.leaderboard = leaderboardPos
       this.finalScore = game.totalScore
 
-      // TBD:
-      this.description = `Preliminary analysis of "The Maestro's" skeeball session reveals a near-perfect execution of technique and strategy.
-      Trajectory analysis indicates consistent arc angles and velocity, resulting in an unprecedented point accumulation.
-      Further research is warranted to determine if this level of skeeball proficiency constitutes a new paradigm in competitive arcade gaming.`
-      this.description = this.description.replace(/\n/g, '<br>')
-      // TBD:
-      this.videoSrc = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+      const recordingsWithFeedback = game.recordingsWithFeedback
+      let randomRecording = ""
+      let randomGeminiFeedback = ""
+
+      if (recordingsWithFeedback.length > 0) {
+        const randomIndex = Math.floor(Math.random() * recordingsWithFeedback.length);
+        randomRecording = recordingsWithFeedback[randomIndex].video;
+        randomGeminiFeedback = recordingsWithFeedback[randomIndex].geminiFeedback;
+      }
+
+      this.description = randomGeminiFeedback
+      this.videoSrc = randomRecording
     }
   }
 })
@@ -270,14 +204,20 @@ export const useChromebookStore = defineStore('chromebook', {
   actions: {
     async setData() {
       const gameId = getQueryParam('gameId', false)
-      const scoresCollection = doc(collection(db, 'games'), gameId)
+      const scoresCollection = doc(collection(db, 'game-sessions'), gameId)
       const game = await getDoc(scoresCollection)
       const gameData = game.data()
+      const recordingsWithFeedback = gameData.recordingsWithFeedback
+      let randomRecording = ""
+
+      if (recordingsWithFeedback.length > 0) {
+        const randomIndex = Math.floor(Math.random() * recordingsWithFeedback.length);
+        randomRecording = recordingsWithFeedback[randomIndex].video;
+      }
 
       this.finalScore = gameData.totalScore
       this.gameId = gameId
-      // TBD:
-      this.videoSrc = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+      this.videoSrc = randomRecording;
     }
   }
 })
@@ -294,8 +234,8 @@ window.setHighlights = (highlights) => {
   useHightlightsStore().setHighlights(highlights)
 }
 
-window.setGeminiReport = (text) => {
-  useScoreStore().setGeminiReport(text)
+window.setGeminiAnalysis = (text) => {
+  useScoreStore().setGeminiAnalysis(text)
 }
 
 window.setData = (data) => {
