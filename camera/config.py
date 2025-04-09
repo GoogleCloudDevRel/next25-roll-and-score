@@ -60,7 +60,7 @@ SCORE_TRACKER_DISAPPEARANCE_GRACE_FRAMES = 3
 
 # Game Logic
 SCORES_PER_GAME_SESSION = 3  # Trigger stop after this many scores
-TOTAL_NUMBER_OF_ROUNDS = 3  # When to update the game status to completed
+TOTAL_NUMBER_OF_ROUNDS = 2  # When to update the game status to completed
 
 # Gemini Coach Settings
 GEMINI_MODEL_ID = "gemini-2.0-flash-001"

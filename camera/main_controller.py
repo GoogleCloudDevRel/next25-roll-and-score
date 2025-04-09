@@ -160,9 +160,9 @@ class MainController:
             command = data.get("command").lower()
             game_id = data.get("gameId")
 
-            if self.game_id and game_id != self.game_id:
-                log.warning(f"Current GameID is not '{game_id}'. Command ignored!")
-                return
+            # if self.game_id and game_id != self.game_id:
+            #     log.warning(f"Current GameID is not '{game_id}'. Command ignored!")
+            #     return
 
             # --- START GAME ---
             if command == "start-game":
@@ -260,6 +260,8 @@ class MainController:
                         "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
                     })
 
+                    log.info(f"Successfully ended round: {self.round_number} for game: '{self.game_id}'")
+
                 else:  # for the final round
                     self._update_game_session(field_updates={
                         "recordingsWithFeedback": firestore.ArrayUnion([new_vid_with_feedback]),
@@ -267,12 +269,15 @@ class MainController:
                         "gameStatus": "completed"
                     })
 
+                    log.info(f"Successfully ended round: {self.round_number} for game: '{self.game_id}'")
+                    log.info("Final round. Resetting variables")
+
                     # Reset internal variables
                     self.game_id = None
                     self.round_number = 0
                     self.scores_from_all_rounds = []
 
-                log.info(f"Successfully ended round: {self.round_number} for game: '{self.game_id}'")
+                    log.info("Game Completed!")
 
             else:
                 log.warning(f"Unrecognized command: '{command}' in received message: {data}.")
