@@ -3,12 +3,8 @@ import { defineStore } from "pinia";
 import { db } from '@/config/firebaseConfig';
 import { collection, query, orderBy, limit, onSnapshot, doc, getDoc, getDocs } from "firebase/firestore";
 
-export const saveEndGame = async () => {
-
-}
-
-export const subscribeTotalScore = async (gameId) => {
-  const game = doc(collection(db, 'game-sessions'), gameId);
+export const subscribeTotalScore = async () => {
+  const game = doc(collection(db, 'game-sessions'), useScoreStore().gameId);
   const unsubscribe = onSnapshot(game, (gameSnapshot) => {
     const gameData = gameSnapshot.data()
     useScoreStore().setTotalScore(gameData.totalScore)
@@ -34,15 +30,17 @@ export const useScoreStore = defineStore('score', {
     totalScore: 0,
     tries: 0,
     step: 0,
-    maxTries: 9,
-    maxSteps: 3,
+    maxTries: 6,
+    maxSteps: 2,
     triesPerStep: 3,
     device: getQueryParam('device', false) || '1',
     stationName: `station0${getQueryParam('device', false) || '1'}`,
-    replayVideo: null,
     gameStarted: null,
     gameId: null,
+    replayVideo: null,
     geminiAnalysis: null,
+    shownReplay: false,
+    shownReport: false
   }),
   actions: {
     setTotalScore(totalScore) {
@@ -73,13 +71,15 @@ export const useScoreStore = defineStore('score', {
       this.totalScore = 0
       this.tries = 0
       this.step = 0
-      this.maxTries = 9
-      this.maxSteps = 3
+      this.maxTries = 6
+      this.maxSteps = 2
       this.triesPerStep = 3
-      this.replayVideo = null
       this.gameStarted = false
       this.gameId = null
+      this.replayVideo = null
       this.geminiAnalysis = null
+      this.shownReplay = false
+      this.shownReport = false
     },
     async getStationInfo() {
       const stationInfoRef = doc(db, 'station-info', this.stationName)
@@ -90,7 +90,7 @@ export const useScoreStore = defineStore('score', {
         this.setGameStarted(stationInfoDocSnap.data().isRunning)
         this.setVideoReplay(stationInfoDocSnap.data().replayVideo)
         this.setGeminiAnalysis(stationInfoDocSnap.data().geminiAnalysis)
-        console.log("gameId:", this.gameId)
+        console.log("gameId:", this.gameId, "isRunning:", this.gameStarted)
       } else {
         console.log("Can't get station info!")
       }
@@ -153,7 +153,7 @@ export const useHightlightsStore = defineStore('highlights', {
       this.score5 = scores[4] || 0;
     },
     setVideo(video) {
-      this.video = video;
+      this.video = video || "https://www.youtube.com/watch?v=xvFZjo5PgG0";
     },
   }
 });

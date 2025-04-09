@@ -24,7 +24,7 @@ import { useRouteManager } from '@/router/useRouteManager'
 import { useScoreStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import VText from '@/components/VText.vue'
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import copy from '@/copy.json'
 import IconGemini from '@/components/icons/IconGemini.vue'
 import { gsap } from '@/utils/gsap'
@@ -32,21 +32,41 @@ import VProgress from '@/components/VProgress.vue'
 import VConfetti from '@/components/VConfetti.vue'
 const { navigateTo, isTransitioning, previousRoute } = useRouteManager()
 
-const { gameStarted, geminiReport, replayVideo } = storeToRefs(useScoreStore())
+const { gameStarted, geminiAnalysis, replayVideo } = storeToRefs(useScoreStore())
 
 const progressTextRef = ref(null)
 const geminiIconSpinRef = ref(null)
 const confetti = ref(null)
 
-watch(
-  () => geminiReport.value && replayVideo.value && gameStarted.value && !isTransitioning.value,
-  (v) => {
-    if (v) {
-      navigateTo(previousRoute.value.id === 'replay' ? 'report' : 'replay')
-    }
-  },
-  { immediate: true },
-)
+// watch(() => geminiAnalysis.value && gameStarted.value && !isTransitioning.value)
+// watch(
+//   () => geminiAnalysis.value && replayVideo.value && gameStarted.value && !isTransitioning.value,
+//   (v) => {
+//     if (v) {
+//       if (!shownReplay.value) {
+//         navigateTo('replay')
+//         setTimeout(() => {
+//           shownReplay.value = true
+//         }, 10000)
+//       }
+//       if (!shownReport.value) {
+//         navigateTo('report')
+//         setTimeout(() => {
+//           shownReport.value = true
+//         }, 10000)
+//       }
+//       if (shownReplay.value && shownReport.value) {
+//         navigateTo('final')
+//       }
+//     }
+//   },
+//   { immediate: true },
+// )
+
+onMounted(async () => {
+  // console.log('onMounted')
+  // navigateTo(previousRoute.value.id === 'replay' ? 'report' : 'replay')
+})
 
 const animatedOut = ref(false)
 

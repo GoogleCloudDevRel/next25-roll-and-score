@@ -11,8 +11,7 @@
         "source": "/api/**",
         "run": {
           "serviceId": "roll-and-score-backend",
-          "region": "us-central1",
-          "pinTag": true
+          "region": "us-central1"
         }
       },
       {

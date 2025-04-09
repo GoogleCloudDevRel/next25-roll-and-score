@@ -13,7 +13,6 @@
 <script setup>
 import GeminiCoach from '@/components/GeminiCoach.vue'
 import VProgress from '@/components/VProgress.vue'
-import { useRouteManager } from '@/router/useRouteManager'
 import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
@@ -21,9 +20,7 @@ import { useScoreStore } from '@/store'
 
 const geminiCoach = ref(null)
 const scoreStore = useScoreStore()
-const { geminiAnalysis, gameStarted } = storeToRefs(scoreStore)
-
-const { navigateTo } = useRouteManager()
+const { geminiAnalysis } = storeToRefs(scoreStore)
 
 defineExpose({
   animateSet: async () => {
@@ -42,9 +39,6 @@ defineExpose({
     await new Promise((resolve) =>
       setTimeout(resolve, Math.min(geminiAnalysis.value.length * 50, 1000)),
     )
-    if (gameStarted.value) {
-      navigateTo('score')
-    }
   },
 })
 </script>

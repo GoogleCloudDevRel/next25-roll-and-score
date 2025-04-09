@@ -5,7 +5,7 @@
   "welcomeText": "Welcome! Get ready to witness the impact of AI guidance and take your game to next levels!",
   "startText": "Roll the ball to start!",
   "finalTopScoreText": "Congratulations, you ranked <span class='highlight'>#${rank}</span> in today’s Roll & Score",
-  "finalText": "Great job! Visit <span class='highlight'>Chromebook ${device}</span> for your comprehensive analysis!",
+  "finalText": "Great job! Visit <span class='highlight'>Chromebook</span> for your comprehensive analysis!",
   "progressText": [
     "practicing pep-talk",
     "analyzing results",

@@ -4,7 +4,7 @@
       <ScoreBoard
         ref="scoreBoard"
         textVariant="tv-bold-420"
-        :value="score"
+        :value="totalScore"
         :immediate="false"
       />
     </div>
@@ -30,7 +30,7 @@ import VConfetti from '@/components/VConfetti.vue'
 import copy from '@/copy.json'
 
 import { computed, ref } from 'vue'
-import { useHightlightsStore, useScoreStore, saveEndGame } from '@/store'
+import { useHightlightsStore, useScoreStore } from '@/store'
 import { storeToRefs } from 'pinia'
 
 const drawer = ref(null)
@@ -40,15 +40,15 @@ const confetti = ref(null)
 const scoreStore = useScoreStore()
 const highlightsStore = useHightlightsStore()
 
-const { score, device } = storeToRefs(scoreStore)
+const { totalScore, device } = storeToRefs(scoreStore)
 const { score1, score2, score3, score4, score5 } = storeToRefs(highlightsStore)
 
 const rank = computed(() => {
-  if (score.value >= score1.value) return 1
-  if (score.value >= score2.value) return 2
-  if (score.value >= score3.value) return 3
-  if (score.value >= score4.value) return 4
-  if (score.value >= score5.value) return 5
+  if (totalScore.value >= score1.value) return 1
+  if (totalScore.value >= score2.value) return 2
+  if (totalScore.value >= score3.value) return 3
+  if (totalScore.value >= score4.value) return 4
+  if (totalScore.value >= score5.value) return 5
   return 0
 })
 
@@ -75,7 +75,6 @@ defineExpose({
       drawer.value.text().animateIn()
     }
     await new Promise((resolve) => setTimeout(resolve, 5000))
-    await saveEndGame()
   },
   animateOut: async () => {
     await drawer.value.animateOut()

@@ -31,8 +31,7 @@
 
 <script setup>
 import { gsap } from '@/utils/gsap'
-import { ref } from 'vue'
-import { useRouteManager } from '@/router/useRouteManager'
+import { ref, onMounted } from 'vue'
 import { getQueryParam } from '@/utils/get-query-param'
 import VBadge from '@/components/VBadge.vue'
 import VText from '@/components/VText.vue'
@@ -44,8 +43,12 @@ const video = ref(null)
 const wrapper = ref(null)
 const badge = ref(null)
 
-const { replayVideo, gameStarted } = storeToRefs(useScoreStore())
-const { navigateTo } = useRouteManager()
+const { replayVideo, shownReplay } = storeToRefs(useScoreStore())
+
+onMounted(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+  shownReplay.value = true
+})
 
 const animateSet = () => {
   gsap.set(wrapper.value, {
@@ -101,9 +104,6 @@ defineExpose({
       new Promise((resolve) => (video.value.onended = () => resolve())),
       new Promise((resolve) => setTimeout(resolve, 10000)),
     ])
-    if (gameStarted.value) {
-      navigateTo('report')
-    }
   },
 })
 </script>

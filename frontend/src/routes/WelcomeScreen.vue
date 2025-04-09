@@ -11,18 +11,11 @@
 
 <script setup>
 import GeminiCoach from '@/components/GeminiCoach.vue'
-import { useRouteManager } from '@/router/useRouteManager'
 import { getQueryParam } from '@/utils/get-query-param'
 import { ref } from 'vue'
-import { useScoreStore } from '@/store'
-import { storeToRefs } from 'pinia'
 import copy from '@/copy.json'
 
 const geminiCoach = ref(null)
-
-const { navigateTo } = useRouteManager()
-
-const { gameStarted } = storeToRefs(useScoreStore())
 
 defineExpose({
   animateSet: async () => {
@@ -38,9 +31,6 @@ defineExpose({
   animateIdle: async () => {
     if (getQueryParam('manual')) return
     await new Promise((resolve) => setTimeout(resolve, copy.welcomeText.length * 50))
-    if (gameStarted.value) {
-      navigateTo('start')
-    }
   },
 })
 </script>
