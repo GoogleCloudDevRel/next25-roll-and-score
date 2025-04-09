@@ -13,7 +13,7 @@
       :key="route.__name"
     />
   </div>
-  <QRCode :value="copy.howItWorkURL" />
+  <QRCode :value="copy.howItWorks" />
 </template>
 
 <script setup>

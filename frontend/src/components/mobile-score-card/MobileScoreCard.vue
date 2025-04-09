@@ -88,6 +88,7 @@
       >
         <VButton
           textVariant="mobile-bold-15"
+          @click="goToHowItWorks"
           text="Learn More"
           backgroundColor="yellow"
         />
@@ -113,6 +114,7 @@ import VBadge from '@/components/VBadge.vue'
 import VButton from '@/components/VButton.vue'
 import { onMounted, ref } from 'vue'
 import gsap from 'gsap'
+import copy from '@/copy.json'
 
 const mobileScoreCard = ref(null)
 const backing = ref(null)
@@ -149,6 +151,12 @@ defineProps({
     required: true,
   },
 })
+
+const goToHowItWorks = () => {
+  window.open(copy.howItWorks, '_blank') // Opens in a new tab/window
+  // Alternatively, to open in the same tab:
+  // window.location.href = websiteUrl;
+}
 
 const heading = ref(null)
 
