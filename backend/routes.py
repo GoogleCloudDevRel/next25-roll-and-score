@@ -64,14 +64,14 @@ def resume_game():
         received_data = request.get_json()
         station_id = received_data['stationId']
         game_id = received_data['gameId']
+        message = {
+            "command": "resume-game",
+            "gameId": game_id,
+        }
 
         if game_id:
             # Send start recording message to camera modules (Pub/Sub)
             topic_id = cfg.PUBSUB_TOPIC_ID.format(station_id=station_id)
-            message = {
-                "command": "start-game",
-                "gameId": game_id,
-            }
             PUBSUB_SERVICE.publish_message(cfg.GOOGLE_CLOUD_PROJECT_ID, topic_id, message)
 
         return jsonify(message)
@@ -108,20 +108,11 @@ def cancel_game():
         return jsonify({'gameId': game_id})
 
 
-@api_blueprint.route("/finish_game", methods=['POST'])
-def clear_game():
+@api_blueprint.route("/reset_station", methods=['POST'])
+def reset_station():
     if request.method == 'POST':
         received_data = request.get_json()
         station_id = received_data['stationId']
-        game_id = received_data['gameId']
-
-        FIRESTORE_SERVICE.update_fields(
-            collection_name=cfg.GAME_SESSIONS_COLLECTION_NAME,
-            document_id=game_id,
-            field_value_dict={
-                "gameStatus": "completed"
-            },
-        )
 
         FIRESTORE_SERVICE.update_fields(
             collection_name=cfg.STATION_INFO_COLLECTION_NAME,
@@ -133,5 +124,4 @@ def clear_game():
                 "geminiAnalysis": "",
             }
         )
-
         return jsonify({'message': "ok"})
