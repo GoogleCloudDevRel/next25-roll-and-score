@@ -186,9 +186,10 @@ export const useMobileScoreStore = defineStore('mobileScore', {
       if (recordingsWithFeedback.length > 0) {
         const randomIndex = Math.floor(Math.random() * recordingsWithFeedback.length);
         randomRecording = recordingsWithFeedback[randomIndex].video;
-        randomGeminiFeedback = recordingsWithFeedback[randomIndex].geminiFeedback;
+        randomGeminiFeedback = recordingsWithFeedback[randomIndex].feedback;
       }
 
+      console.log(randomGeminiFeedback)
       this.description = randomGeminiFeedback
       this.videoSrc = randomRecording
     }

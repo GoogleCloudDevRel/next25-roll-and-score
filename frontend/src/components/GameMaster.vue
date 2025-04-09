@@ -142,7 +142,10 @@ const subscribeTableData = async () => {
 
     snapshot.docs.forEach((doc) => {
       const data = doc.data()
-      if (data.stationId === stationId && data.gameStatus === 'completed') {
+      if (data.stationId === stationId) {
+        if (data.gameStatus === 'cancelled') {
+          return
+        }
         tableData.value.push({
           gameId: doc.id,
           startTime: data.startDateTime.toDate().toLocaleTimeString(),

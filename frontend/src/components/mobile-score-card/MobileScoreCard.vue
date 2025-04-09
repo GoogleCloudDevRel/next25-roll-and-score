@@ -76,7 +76,7 @@
       >
         <VText
           variant="mobile-medium-15"
-          :text="description"
+          :text="String(description)"
           animateBy="lines"
           center
           ref="descriptionText"

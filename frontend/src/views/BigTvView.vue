@@ -13,7 +13,7 @@
       :key="route.__name"
     />
   </div>
-  <QRCode :value="'https://www.google.com'" />
+  <QRCode :value="copy.howItWorkURL" />
 </template>
 
 <script setup>
@@ -26,6 +26,8 @@ import { nextTick, onMounted, onUnmounted, shallowRef } from 'vue'
 import { getQueryParam } from '@/utils/get-query-param'
 import QRCode from '@/components/QRCode.vue'
 import { subscribeToHighlightsChanges } from '@/store'
+import copy from '@/copy.json'
+
 const activeRoutes = shallowRef([])
 const activeRoutesRef = shallowRef([])
 
