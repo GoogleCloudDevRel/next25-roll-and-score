@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 // import vueDevTools from 'vite-plugin-vue-devtools'
 import { dirname, join } from 'node:path'
+import removeConsole from 'vite-plugin-remove-console'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
 
@@ -12,6 +13,7 @@ export default defineConfig({
   plugins: [
     vue(),
     // vueDevTools(),
+    removeConsole(),
     {
       name: 'glsl',
       transform(code, id) {
